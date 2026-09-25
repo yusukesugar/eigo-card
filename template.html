@@ -1,0 +1,412 @@
+<title>{{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --sky: #2f7fd6;
+    --sky-deep: #1d5ea8;
+    --card: #fff6cf;
+    --card-edge: #e9c94a;
+    --ink: #1c2b40;
+    --sub: #5a6b82;
+    --pop: #ff6b4a;
+    --pop-deep: #c94a2f;
+    --white: #ffffff;
+    --en: "Fredoka", "Arial Rounded MT Bold", system-ui, sans-serif;
+    --ja: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", system-ui, sans-serif;
+  }
+  body {
+    background: var(--sky);
+    color: var(--ink);
+    font-family: var(--ja);
+    padding-inline: 16px;
+    padding-block: 16px 32px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--white); }
+  h1 { margin: 0; font-weight: 800; font-size: clamp(24px, 6vw, 34px); letter-spacing: .04em; }
+  .home { color: inherit; text-decoration: none; margin-right: 8px; }
+  .hint { margin: 0; font-size: 15px; color: var(--white); }
+
+  .modes { display: flex; background: var(--sky-deep); border-radius: 999px; padding: 4px; gap: 4px; }
+  .mode {
+    font: 800 15px var(--ja);
+    color: var(--white);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 16px;
+    cursor: pointer;
+  }
+  .mode[aria-checked="true"] { background: var(--white); color: var(--ink); }
+  .mode:focus-visible { outline: 4px solid var(--ink); outline-offset: 2px; }
+
+  .big-pic.txt, .card.txt { font-family: var(--en); font-weight: 700; color: var(--ink); }
+  .big-pic.txt { font-size: clamp(72px, 20vw, 110px); }
+  .card.txt { font-size: clamp(28px, 8vw, 40px); }
+  .big-word.hidden { color: var(--card-edge); letter-spacing: .15em; }
+
+  .big-word.long { font-size: clamp(30px, 8.5vw, 50px); text-wrap: balance; }
+  .slot { color: var(--pop); }
+  .slot.masked { color: var(--card-edge); letter-spacing: .1em; }
+  .pick-msg .en { overflow-wrap: anywhere; }
+
+  .view { display: grid; justify-items: center; gap: 4px; width: 100%; }
+  .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 360px; }
+  .choice {
+    background: var(--card);
+    border: 3px solid var(--card-edge);
+    border-radius: 20px;
+    aspect-ratio: 1;
+    max-width: 100%;
+    font-size: clamp(48px, 14vw, 72px);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 5px 0 var(--card-edge);
+    padding: 0;
+  }
+  .choice.txt { font-family: var(--en); font-weight: 700; color: var(--ink); font-size: clamp(34px, 10vw, 48px); }
+  .choice:focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; }
+  .choice.right { background: var(--white); border-color: #2eaa5c; box-shadow: 0 5px 0 #2eaa5c; }
+  .choice.wrong { opacity: .35; animation: shake .3s; }
+  @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  .pick-msg { margin: 8px 0 4px; min-height: 1.6em; font-size: 20px; font-weight: 800; text-align: center; }
+  .pick-msg .en { font-family: var(--en); font-size: 26px; }
+  .cards[hidden], .view[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { .choice.wrong { animation: none; } }
+
+  .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: none;
+    font: 800 14px var(--ja);
+    color: var(--white);
+    background: var(--sky-deep);
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tab[aria-selected="true"] { background: var(--white); color: var(--ink); }
+  .tab .num { font-family: var(--en); margin-right: 4px; opacity: .7; }
+
+  .stage {
+    background: var(--white);
+    border-radius: 28px;
+    padding: 18px 16px 20px;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 4px;
+    box-shadow: 0 8px 0 var(--sky-deep);
+    min-height: 230px;
+    text-align: center;
+  }
+  .big-pic { font-size: clamp(80px, 22vw, 120px); line-height: 1.1; }
+  .big-word { font-family: var(--en); font-weight: 700; font-size: clamp(42px, 12vw, 70px); line-height: 1.05; letter-spacing: .02em; overflow-wrap: anywhere; }
+  .big-ja { font-size: 18px; color: var(--sub); }
+  .stage.pop .big-pic { animation: pop .35s ease-out; }
+  @keyframes pop { 0% { transform: scale(.6) rotate(-8deg); } 70% { transform: scale(1.12) rotate(3deg); } 100% { transform: scale(1); } }
+
+  .btn {
+    font: 800 16px var(--ja);
+    color: var(--white);
+    background: var(--pop);
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--pop-deep);
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--pop-deep); }
+  .btn:disabled { opacity: .35; cursor: default; }
+  .again { margin-top: 8px; }
+
+  .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 440px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .card {
+    background: var(--card);
+    border: 3px solid var(--card-edge);
+    border-radius: 20px;
+    aspect-ratio: 1;
+    max-width: 100%;
+    font-size: clamp(36px, 10vw, 50px);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 5px 0 var(--card-edge);
+    position: relative;
+    padding: 0;
+  }
+  .card:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--card-edge); }
+  .card[aria-pressed="true"] { background: var(--white); border-color: var(--pop); box-shadow: 0 5px 0 var(--pop); }
+  .card.heard::after {
+    content: "";
+    position: absolute;
+    top: 7px; right: 7px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--pop);
+  }
+
+  .pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .pageinfo { color: var(--white); text-align: center; font-size: 14px; line-height: 1.5; }
+  .pageinfo b { font-family: var(--en); font-size: 18px; }
+
+  .tab:focus-visible, .btn:focus-visible, .card:focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { .stage.pop .big-pic { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><!--HOME-->{{TITLE}}</h1>
+    <div class="modes" role="radiogroup" aria-label="モード">
+      <button class="mode" type="button" role="radio" data-mode="listen">きく</button>
+      <button class="mode" type="button" role="radio" data-mode="quiz">テスト</button>
+      <button class="mode" type="button" role="radio" data-mode="pick">えらぶ</button>
+    </div>
+  </header>
+  <p class="hint" id="hint"></p>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="ページ"></nav>
+
+  <section class="stage" id="stage" aria-live="polite">
+    <div class="view" id="cardView">
+      <div class="big-pic" id="pic"></div>
+      <div class="big-word" id="word"></div>
+      <div class="big-ja" id="ja"></div>
+      <button class="btn again" id="again" type="button">もう一回きく</button>
+    </div>
+    <div class="view" id="pickView" hidden>
+      <div class="choices" id="choices"></div>
+      <p class="pick-msg" id="pickMsg"></p>
+      <button class="btn" id="replay" type="button">🔊 きく</button>
+    </div>
+  </section>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="pager">
+    <button class="btn" id="prev" type="button">← まえ</button>
+    <div class="pageinfo">
+      <div><b id="pno">1</b> / <b id="pmax">10</b> ページ</div>
+      <div>きいたカード <b id="n">0</b> / <b id="total">0</b></div>
+    </div>
+    <button class="btn" id="next" type="button">つぎ →</button>
+  </div>
+</div>
+
+<script>
+/*DATA*/
+</script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const heard = new Set();
+  let page = 0;
+  let current = 0;
+
+  // ぶんは入れかえる語を {} でかこんでいる。音と表示では外す
+  const plain = (s) => s.replace(/[{}]/g, "");
+
+  const player = new Audio();
+  function say(word) {
+    player.pause();
+    player.src = AUDIO[plain(word)];
+    player.currentTime = 0;
+    player.play().catch(() => {});
+  }
+
+  // 絵文字でなく文字そのもの（数字・アルファベット）のカードは英字フォントで出す
+  const isText = (pic) => /^[\x20-\x7e]+$/.test(pic);
+
+  let mode = "listen";
+  let revealed = true;
+  try {
+    const saved = localStorage.getItem("eigo-mode");
+    if (saved === "quiz" || saved === "pick") mode = saved;
+  } catch (e) {}
+
+  function markHeard(i) {
+    heard.add(page + ":" + i);
+    $("cards").children[i].classList.add("heard");
+    $("n").textContent = heard.size;
+  }
+
+  function renderWord() {
+    const word = PAGES[page].words[current][1];
+    const w = $("word");
+    w.textContent = "";
+    w.classList.toggle("long", plain(word).length > 10);
+    // テストでは入れかえる語だけ伏せる。わくの文は見えたまま、くりかえし言えるように
+    const hasSlot = word.includes("{");
+    w.classList.toggle("hidden", !revealed && !hasSlot);
+    if (!revealed && !hasSlot) {
+      w.textContent = "？？？";
+    } else {
+      word.split(/(\{[^}]*\})/).forEach((part) => {
+        if (!part) return;
+        if (part.startsWith("{")) {
+          const s = document.createElement("span");
+          s.className = "slot" + (revealed ? "" : " masked");
+          s.textContent = revealed ? part.slice(1, -1) : "？？？";
+          w.appendChild(s);
+        } else {
+          w.appendChild(document.createTextNode(part));
+        }
+      });
+    }
+    $("again").textContent = revealed ? "もう一回きく" : "こたえ";
+  }
+
+  function showWord(i, tapped) {
+    current = i;
+    const [pic, word, ja] = PAGES[page].words[i];
+    const p = $("pic");
+    p.textContent = pic;
+    p.classList.toggle("txt", isText(pic));
+    $("ja").textContent = ja;
+    // テストでは英語を伏せて、こたえボタンで出す
+    revealed = mode === "listen" || !tapped;
+    renderWord();
+    const stage = $("stage");
+    stage.classList.remove("pop");
+    void stage.offsetWidth;
+    stage.classList.add("pop");
+    document.querySelectorAll(".card").forEach((c, j) => c.setAttribute("aria-pressed", j === i));
+    if (tapped && mode === "listen") {
+      markHeard(i);
+      say(word);
+    }
+  }
+
+  // えらぶ: 音だけ流して、同じページの4まいから当てる
+  let answer = -1;
+  let locked = false;
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function newQuestion(speak) {
+    const words = PAGES[page].words;
+    const idx = words.map((_, i) => i).filter((i) => i !== answer);
+    answer = idx[Math.floor(Math.random() * idx.length)];
+    const others = shuffle(words.map((_, i) => i).filter((i) => i !== answer)).slice(0, 3);
+    const box = $("choices");
+    box.textContent = "";
+    shuffle([answer, ...others]).forEach((i) => {
+      const pic = words[i][0];
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "choice" + (isText(pic) ? " txt" : "");
+      b.textContent = pic;
+      b.setAttribute("aria-label", words[i][2]);
+      b.addEventListener("click", () => choose(b, i));
+      box.appendChild(b);
+    });
+    $("pickMsg").textContent = speak ? "なにかな？" : "「🔊 きく」をおしてね";
+    locked = false;
+    if (speak) say(words[answer][1]);
+  }
+
+  function choose(btn, i) {
+    if (locked || btn.classList.contains("wrong")) return;
+    const word = PAGES[page].words[answer][1];
+    if (i === answer) {
+      locked = true;
+      btn.classList.add("right");
+      const msg = $("pickMsg");
+      msg.textContent = "せいかい！ ";
+      const en = document.createElement("span");
+      en.className = "en";
+      en.textContent = plain(word);
+      msg.appendChild(en);
+      say(word);
+      setTimeout(() => { if (mode === "pick") newQuestion(true); }, 1600);
+    } else {
+      btn.classList.add("wrong");
+      $("pickMsg").textContent = "ちがうよ。もう一回きいてみよう";
+    }
+  }
+
+
+  function setMode(m, speak) {
+    mode = m;
+    try { localStorage.setItem("eigo-mode", m); } catch (e) {}
+    document.querySelectorAll(".mode").forEach((b) => b.setAttribute("aria-checked", b.dataset.mode === m));
+    $("hint").textContent = HINTS[m];
+    $("cardView").hidden = m === "pick";
+    $("cards").hidden = m === "pick";
+    $("pickView").hidden = m !== "pick";
+    if (m === "pick") {
+      newQuestion(speak);
+    } else {
+      revealed = true;
+      renderWord();
+    }
+  }
+
+  function showPage(p, speak) {
+    page = p;
+    const cards = $("cards");
+    cards.textContent = "";
+    PAGES[p].words.forEach(([pic, word], i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "card" + (heard.has(p + ":" + i) ? " heard" : "") + (isText(pic) ? " txt" : "");
+      b.textContent = pic;
+      b.setAttribute("aria-label", word);
+      b.addEventListener("click", () => showWord(i, true));
+      cards.appendChild(b);
+    });
+    document.querySelectorAll(".tab").forEach((t, j) => t.setAttribute("aria-selected", j === p));
+    const active = $("tabs").children[p];
+    active.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    $("pno").textContent = p + 1;
+    $("prev").disabled = p === 0;
+    $("next").disabled = p === PAGES.length - 1;
+    showWord(0, false);
+    if (mode === "pick") {
+      answer = -1;
+      newQuestion(speak);
+    }
+  }
+
+  PAGES.forEach((pg, i) => {
+    const t = document.createElement("button");
+    t.type = "button";
+    t.className = "tab";
+    t.setAttribute("role", "tab");
+    t.innerHTML = '<span class="num"></span><span class="name"></span>';
+    t.querySelector(".num").textContent = i + 1;
+    t.querySelector(".name").textContent = pg.title;
+    t.addEventListener("click", () => showPage(i, true));
+    $("tabs").appendChild(t);
+  });
+  $("pmax").textContent = PAGES.length;
+  $("total").textContent = PAGES.reduce((s, pg) => s + pg.words.length, 0);
+  $("again").addEventListener("click", () => {
+    if (!revealed) {
+      revealed = true;
+      renderWord();
+      markHeard(current);
+    }
+    say(PAGES[page].words[current][1]);
+  });
+  $("replay").addEventListener("click", () => say(PAGES[page].words[answer][1]));
+  document.querySelectorAll(".mode").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode, true)));
+  $("prev").addEventListener("click", () => page > 0 && showPage(page - 1, true));
+  $("next").addEventListener("click", () => page < PAGES.length - 1 && showPage(page + 1, true));
+  // 音はタップのあとでないと鳴らないので、開いた直後の1問目は「もう一回きく」で流す
+  setMode(mode, false);
+  showPage(0, false);
+</script>
