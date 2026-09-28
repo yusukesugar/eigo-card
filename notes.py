@@ -28,6 +28,7 @@ PHRASE_NOTES = {
     "That's OK.": "あやまられたときの「いいよ」。「いいよ、やろう！」の いいよ は Sure! や OK! だよ。",
     "I'm sorry.": "わるいことを したときの「ごめんなさい」。人の まえを とおるときの「すみません」は Excuse me. だよ。",
     "See you!": "また あえるときの「またね」。See you tomorrow! なら「またあしたね」。",
+    "Can I have some barley tea?": "むぎちゃは えいごで barley tea（バーリー ティー）。えいごを はなす くにでは あまり のまないので、つうじないことも あるよ。",
     "Can I have a hug?": "hug（ハグ）は ぎゅっと だきしめること。えいごを はなす くにでは、かぞくや ともだちと よく するよ。",
     "I don't like green peppers.": "ピーマンは フランスごの piment（ピマン）から きた ことば、といわれているよ。えいごでは green pepper。",
     "Where is Mom?": "おかあさんを よぶときは Mom。なまえ みたいに つかうから、大文字で はじめるよ。Dad も おなじ。",
