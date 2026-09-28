@@ -196,9 +196,10 @@
   .btn:disabled { opacity: .35; cursor: default; }
   .again { margin-top: 8px; }
 
-  /* 絵の大きさは カードの列の はばに あわせる（cqw = .cards の はばの 1%） */
-  .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; container-type: inline-size; --pic: 11cqw; --txt: 6.5cqw; }
-  @media (max-width: 440px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); --pic: 15cqw; --txt: 9cqw; } }
+  /* 絵の大きさは カードの はばから JS（fitPics）で px にして入れる。
+     cqw は iPad Safari で さいしょの表示だけ ずれることがあったので つかわない */
+  .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; --pic: 48px; --txt: 28px; }
+  @media (max-width: 440px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
   .main { display: grid; gap: 14px; }
   /* iPad よこむき: 大きいカードを ひだり、カードの ならびを みぎ。1がめんに おさめる */
@@ -382,6 +383,18 @@ const NOTES = {"안녕하세요": "あさでも ひるでも よるでも つか
       localStorage.setItem("eigo-log", JSON.stringify(all));
     } catch (e) {}
   }
+
+  // カード1まいの はばから 絵と文字の大きさを きめる。画面の向きや大きさが かわるたびに 計算しなおす
+  function fitPics() {
+    const cards = $("cards");
+    const w = cards.clientWidth;
+    if (!w) return;
+    const cols = getComputedStyle(cards).gridTemplateColumns.split(" ").length;
+    const card = (w - 12 * (cols - 1)) / cols;
+    cards.style.setProperty("--pic", Math.round(card * 0.44) + "px");
+    cards.style.setProperty("--txt", Math.round(card * 0.26) + "px");
+  }
+  if ("ResizeObserver" in window) new ResizeObserver(fitPics).observe($("cards"));
 
   // 絵だけで意味が決まらないページ（あいさつ）は、カードに日本語を小さく添える
   function fillPic(btn, pic, ja) {
@@ -583,6 +596,7 @@ const NOTES = {"안녕하세요": "あさでも ひるでも よるでも つか
   // 音はタップのあとでないと鳴らないので、開いた直後の1問目は「もう一回きく」で流す
   setMode(mode, false);
   showPage(0, false);
+  fitPics();
   logEvent("open");
 </script>
 
