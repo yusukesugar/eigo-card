@@ -60,7 +60,7 @@
 
   .big-pic.txt, .card.txt { font-family: var(--en); font-weight: 700; color: var(--ink); }
   .big-pic.txt { font-size: clamp(72px, 20vw, 110px); }
-  .card.txt { font-size: clamp(28px, 8vw, 40px); }
+  .card.txt { font-size: max(24px, var(--txt)); }
   .big-word.hidden { color: var(--card-edge); letter-spacing: .15em; }
 
   .big-word.long { font-size: clamp(30px, 8.5vw, 50px); text-wrap: balance; }
@@ -180,15 +180,25 @@
   .btn:disabled { opacity: .35; cursor: default; }
   .again { margin-top: 8px; }
 
-  .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-  @media (max-width: 440px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  /* 絵の大きさは カードの列の はばに あわせる（cqw = .cards の はばの 1%） */
+  .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; container-type: inline-size; --pic: 11cqw; --txt: 6.5cqw; }
+  @media (max-width: 440px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); --pic: 15cqw; --txt: 9cqw; } }
+
+  .main { display: grid; gap: 14px; }
+  /* iPad よこむき: 大きいカードを ひだり、カードの ならびを みぎ。1がめんに おさめる */
+  @media (min-width: 960px) and (orientation: landscape) {
+    .wrap { max-width: 1140px; }
+    .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: stretch; }
+    .main:has(.cards[hidden]) { grid-template-columns: minmax(0, 1fr); }
+    .cards { align-content: start; }
+  }
   .card {
     background: var(--card);
     border: 3px solid var(--card-edge);
     border-radius: 20px;
     aspect-ratio: 1;
     max-width: 100%;
-    font-size: clamp(36px, 10vw, 50px);
+    font-size: max(32px, var(--pic));
     cursor: pointer;
     display: grid;
     place-items: center;
@@ -228,6 +238,7 @@
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="ページ"></nav>
 
+  <div class="main">
   <section class="stage" id="stage" aria-live="polite">
     <div class="view" id="cardView">
       <div class="big-pic" id="pic"></div>
@@ -254,6 +265,7 @@
   </section>
 
   <div class="cards" id="cards"></div>
+  </div>
 
   <div class="pager">
     <button class="btn" id="prev" type="button">← まえ</button>
