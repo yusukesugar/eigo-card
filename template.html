@@ -28,7 +28,23 @@
 
   header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--white); }
   h1 { margin: 0; font-weight: 800; font-size: clamp(24px, 6vw, 34px); letter-spacing: .04em; }
-  .home { color: inherit; text-decoration: none; margin-right: 8px; }
+  .home {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 10px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--sky-deep);
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 800;
+    text-decoration: none;
+    vertical-align: middle;
+  }
+  .home:focus-visible { outline: 3px solid var(--white); outline-offset: 2px; }
+  .card:has(.cap), .choice:has(.cap) { align-content: center; gap: 4px; }
+  .cap { display: block; font: 800 14px/1.2 var(--ja); color: var(--sub); padding-inline: 4px; }
   .hint { margin: 0; font-size: 15px; color: var(--white); }
 
   .modes { display: flex; background: var(--sky-deep); border-radius: 999px; padding: 4px; gap: 4px; }
@@ -331,6 +347,16 @@
     $("note").textContent = note || "";
   }
 
+  // 絵だけで意味が決まらないページ（あいさつ）は、カードに日本語を小さく添える
+  function fillPic(btn, pic, ja) {
+    btn.textContent = pic;
+    if (!PAGES[page].labels) return;
+    const cap = document.createElement("span");
+    cap.className = "cap";
+    cap.textContent = ja;
+    btn.appendChild(cap);
+  }
+
   function showWord(i, tapped) {
     current = i;
     const [pic, word, ja] = PAGES[page].words[i];
@@ -406,7 +432,7 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "choice" + (isText(pic) ? " txt" : "");
-      b.textContent = pic;
+      fillPic(b, pic, words[i][2]);
       b.setAttribute("aria-label", words[i][2]);
       b.addEventListener("click", () => choose(b, i));
       box.appendChild(b);
@@ -465,11 +491,11 @@
     page = p;
     const cards = $("cards");
     cards.textContent = "";
-    PAGES[p].words.forEach(([pic, word], i) => {
+    PAGES[p].words.forEach(([pic, word, ja], i) => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "card" + (heard.has(p + ":" + i) ? " heard" : "") + (isText(pic) ? " txt" : "");
-      b.textContent = pic;
+      fillPic(b, pic, ja);
       b.setAttribute("aria-label", word);
       b.addEventListener("click", () => showWord(i, true));
       cards.appendChild(b);

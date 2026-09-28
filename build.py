@@ -157,17 +157,17 @@ PWA_TAIL = """
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 """
-PWA_HOME = '<a class="home" href="./" aria-label="もどる">🏠</a>'
+PWA_HOME = '<a class="home" href="./">🏠 もどる</a>'
 
 
-def build(title: str, pages_src, hints: dict, notes: dict, name: str) -> None:
+def build(title: str, pages_src, hints: dict, notes: dict, name: str, labeled: frozenset = frozenset()) -> None:
     AUDIO_DIR.mkdir(exist_ok=True)
     plain = lambda s: s.replace("{", "").replace("}", "")
     speeches = {plain(x[1]): (x[3] if len(x) > 3 else plain(x[1])) for _, items in pages_src for x in items}
     unknown = set(notes) - set(speeches)
     assert not unknown, f"notes のキーがカードに無い: {unknown}"
     audio = {w: audio_uri(w, s) for w, s in sorted(speeches.items())}
-    pages = [{"title": t, "words": [list(x[:3]) for x in items]} for t, items in pages_src]
+    pages = [{"title": t, "words": [list(x[:3]) for x in items], "labels": t in labeled} for t, items in pages_src]
     data = (
         "const PAGES = " + json.dumps(pages, ensure_ascii=False) + ";\n"
         "const AUDIO = " + json.dumps(audio) + ";\n"
@@ -202,8 +202,8 @@ def build_pwa_shell() -> None:
 
 if __name__ == "__main__":
     from notes import PHRASE_NOTES, WORD_NOTES
-    from phrases import PHRASE_PAGES
+    from phrases import LABELED_PAGES, PHRASE_PAGES
 
     build("えいごカード", PAGES, WORD_HINTS, WORD_NOTES, "words")
-    build("えいごでいおう", PHRASE_PAGES, PHRASE_HINTS, PHRASE_NOTES, "phrases")
+    build("えいごでいおう", PHRASE_PAGES, PHRASE_HINTS, PHRASE_NOTES, "phrases", frozenset(LABELED_PAGES))
     build_pwa_shell()
