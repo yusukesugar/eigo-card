@@ -45,6 +45,7 @@
   .home:focus-visible { outline: 3px solid var(--white); outline-offset: 2px; }
   .card:has(.cap), .choice:has(.cap) { align-content: center; gap: 4px; }
   .cap { display: block; font: 800 14px/1.2 var(--ja); color: var(--sub); padding-inline: 4px; }
+  .cap.word { font-size: 17px; color: var(--ink); white-space: nowrap; }
   .hint { margin: 0; font-size: 15px; color: var(--white); }
 
   .modes { display: flex; background: var(--sky-deep); border-radius: 999px; padding: 4px; gap: 4px; }
@@ -71,7 +72,8 @@
   .pick-msg .en { overflow-wrap: anywhere; }
 
   .view { display: grid; justify-items: center; gap: 4px; width: 100%; }
-  .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 360px; }
+  /* 選ぶの4まい: たてが短い画面では小さくして、下のボタンが切れないようにする */
+  .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 360px; max-width: clamp(200px, calc(100dvh - 460px), 360px); }
   .choice {
     background: var(--card);
     border: 3px solid var(--card-edge);
@@ -184,8 +186,8 @@
 
   /* 絵の大きさは カードの はばから JS（fitPics）で px にして入れる。
      cqw は iPad Safari で さいしょの表示だけ ずれることがあったので つかわない */
-  .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; --pic: 48px; --txt: 28px; }
-  @media (max-width: 440px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .cards { display: grid; grid-template-columns: repeat(4, var(--cell, minmax(0, 1fr))); justify-content: center; gap: 12px; --pic: 48px; --txt: 28px; }
+  @media (max-width: 440px) { .cards { grid-template-columns: repeat(3, var(--cell, minmax(0, 1fr))); } }
 
   .main { display: grid; gap: 14px; }
   /* iPad よこむき: 大きいカードを ひだり、カードの ならびを みぎ。1がめんに おさめる */
@@ -340,6 +342,9 @@
       });
     }
     $("again").textContent = revealed ? "もう一回聞く" : "答え";
+    // 韓国語の読み（カタカナ）は答えそのもの。テストで伏せているあいだは意味だけ出す
+    const [, , ja, reading] = PAGES[page].words[current];
+    $("ja").textContent = revealed && reading && reading !== ja ? `${reading}（${ja}）` : ja;
     // ⓘ は英語が見えてから。テストの答えを先に見せない
     const note = NOTES[plain(word)];
     $("infoBtn").hidden = !(revealed && note);
@@ -366,35 +371,47 @@
     } catch (e) {}
   }
 
-  // カード1まいの はばから 絵と文字の大きさを きめる。画面の向きや大きさが かわるたびに 計算しなおす
+  // カード1まいの大きさと、絵・文字の大きさを きめる。画面の向きや大きさが かわるたびに 計算しなおす。
+  // iPad など広い画面では、下の「前・次」まで1画面に収まるように、たての長さでも小さくする
+  // （Safari はアドレスバーのぶん たてが短く、下のボタンが切れていた）
   function fitPics() {
     const cards = $("cards");
     const w = cards.clientWidth;
     if (!w) return;
     const cols = getComputedStyle(cards).gridTemplateColumns.split(" ").length;
-    const card = (w - 12 * (cols - 1)) / cols;
-    cards.style.setProperty("--pic", Math.round(card * 0.44) + "px");
-    cards.style.setProperty("--txt", Math.round(card * 0.26) + "px");
+    const byWidth = (w - 12 * (cols - 1)) / cols;
+    let size = byWidth;
+    if (innerWidth >= 700) {
+      const rows = Math.ceil(cards.children.length / cols);
+      const top = cards.getBoundingClientRect().top + scrollY;
+      const below = document.querySelector(".pager").offsetHeight + 14 + 32 + 12;
+      const byHeight = (innerHeight - top - below - 12 * (rows - 1)) / rows;
+      size = Math.max(64, Math.min(byWidth, byHeight));
+    }
+    if (size < byWidth - 0.5) cards.style.setProperty("--cell", Math.floor(size) + "px");
+    else cards.style.removeProperty("--cell");
+    cards.style.setProperty("--pic", Math.round(size * 0.44) + "px");
+    cards.style.setProperty("--txt", Math.round(size * 0.26) + "px");
   }
   if ("ResizeObserver" in window) new ResizeObserver(fitPics).observe($("cards"));
+  addEventListener("resize", fitPics);
 
-  // 絵だけで意味が決まらないページ（あいさつ）は、カードに日本語を小さく添える
-  function fillPic(btn, pic, ja) {
+  // 絵の下に小さく文字を添える。text が無ければ絵だけ
+  function fillPic(btn, pic, text, cls = "") {
     btn.textContent = pic;
-    if (!PAGES[page].labels) return;
+    if (!text) return;
     const cap = document.createElement("span");
-    cap.className = "cap";
-    cap.textContent = ja;
+    cap.className = "cap" + (cls ? " " + cls : "");
+    cap.textContent = text;
     btn.appendChild(cap);
   }
 
   function showWord(i, tapped) {
     current = i;
-    const [pic, word, ja] = PAGES[page].words[i];
+    const [pic, word] = PAGES[page].words[i];
     const p = $("pic");
     p.textContent = pic;
     p.classList.toggle("txt", isText(pic));
-    $("ja").textContent = ja;
     // テストでは英語を伏せて、こたえボタンで出す
     revealed = mode === "listen" || !tapped;
     renderWord();
@@ -465,7 +482,9 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "choice" + (isText(pic) ? " txt" : "");
-      fillPic(b, pic, words[i][2]);
+      // 韓国語は ハングルを添える（カタカナの読みは答えそのものなので出さない）
+      if (PICK_SHOWS_WORD) fillPic(b, pic, plain(words[i][1]), "word");
+      else fillPic(b, pic, PAGES[page].labels ? words[i][2] : "");
       b.setAttribute("aria-label", words[i][2]);
       b.addEventListener("click", () => choose(b, i));
       box.appendChild(b);
@@ -529,11 +548,12 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "card" + (heard.has(p + ":" + i) ? " heard" : "") + (isText(pic) ? " txt" : "");
-      fillPic(b, pic, ja);
+      fillPic(b, pic, PAGES[p].labels ? ja : "");
       b.setAttribute("aria-label", word);
       b.addEventListener("click", () => showWord(i, true));
       cards.appendChild(b);
     });
+    fitPics();
     document.querySelectorAll(".tab").forEach((t, j) => t.setAttribute("aria-selected", j === p));
     const active = $("tabs").children[p];
     active.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });

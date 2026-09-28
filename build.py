@@ -165,20 +165,37 @@ PWA_TAIL = """
 PWA_HOME = '<a class="home" href="./">🏠 戻る</a>'
 
 
+def split_reading(card) -> list:
+    """韓国語の「アンニョンハセヨ（こんにちは）」を 意味 と 読み に分ける。
+
+    読みは答えそのものなので、テストで伏せているあいだは出さない。
+    英語の「クモ（虫）」のような かっこ は補足なので分けない（ハングルの語だけが対象）。
+    """
+    pic, word, ja = card
+    if not any("가" <= c <= "힣" for c in word):
+        return [pic, word, ja]
+    if ja.endswith("）") and "（" in ja:
+        reading, meaning = ja[:-1].split("（", 1)
+        return [pic, word, meaning, reading.strip()]
+    return [pic, word, ja, ja]
+
+
 def build(title: str, pages_src, hints: dict, notes: dict, name: str, labeled: frozenset = frozenset(),
-          voice: str = "Samantha", audio_prefix: str = "") -> None:
+          voice: str = "Samantha", audio_prefix: str = "", pick_shows_word: bool = False) -> None:
+    """pick_shows_word: 選ぶ の選択肢に、その言語の語（ハングル）を添える。"""
     AUDIO_DIR.mkdir(exist_ok=True)
     plain = lambda s: s.replace("{", "").replace("}", "")
     speeches = {plain(x[1]): (x[3] if len(x) > 3 else plain(x[1])) for _, items in pages_src for x in items}
     unknown = set(notes) - set(speeches)
     assert not unknown, f"notes のキーがカードに無い: {unknown}"
     audio = {w: audio_uri(w, s, voice, audio_prefix) for w, s in sorted(speeches.items())}
-    pages = [{"title": t, "words": [list(x[:3]) for x in items], "labels": t in labeled} for t, items in pages_src]
+    pages = [{"title": t, "words": [split_reading(x[:3]) for x in items], "labels": t in labeled} for t, items in pages_src]
     data = (
         "const PAGES = " + json.dumps(pages, ensure_ascii=False) + ";\n"
         "const AUDIO = " + json.dumps(audio) + ";\n"
         "const HINTS = " + json.dumps(hints, ensure_ascii=False) + ";\n"
         "const NOTES = " + json.dumps(notes, ensure_ascii=False) + ";\n"
+        "const PICK_SHOWS_WORD = " + json.dumps(pick_shows_word) + ";\n"
     )
     html = (HERE / "template.html").read_text()
     assert html.count("/*DATA*/") == 1 and html.count("<!--HOME-->") == 1
@@ -214,5 +231,5 @@ if __name__ == "__main__":
     build("英語カード", PAGES, WORD_HINTS, WORD_NOTES, "words")
     build("英語で言おう", PHRASE_PAGES, PHRASE_HINTS, PHRASE_NOTES, "phrases", frozenset(LABELED_PAGES))
     build("韓国語", KOREAN_PAGES, KOREAN_HINTS, KOREAN_NOTES, "korean", frozenset(KOREAN_LABELED_PAGES),
-          voice="Yuna", audio_prefix="ko_")
+          voice="Yuna", audio_prefix="ko_", pick_shows_word=True)
     build_pwa_shell()
