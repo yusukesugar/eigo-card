@@ -110,6 +110,45 @@
   .big-pic { font-size: clamp(80px, 22vw, 120px); line-height: 1.1; }
   .big-word { font-family: var(--en); font-weight: 700; font-size: clamp(42px, 12vw, 70px); line-height: 1.05; letter-spacing: .02em; overflow-wrap: anywhere; }
   .big-ja { font-size: 18px; color: var(--sub); }
+  .ja-row { display: flex; align-items: center; gap: 8px; }
+  .info {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--sky);
+    background: var(--white);
+    color: var(--sky);
+    font: 700 16px/1 var(--en);
+    cursor: pointer;
+    padding: 0;
+  }
+  .info[aria-expanded="true"] { background: var(--sky); color: var(--white); }
+  .info:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .note {
+    margin: 6px 0 2px;
+    max-width: 34em;
+    padding: 12px 14px;
+    background: #eaf3fc;
+    border-radius: 14px;
+    font-size: 16px;
+    line-height: 1.7;
+    text-align: left;
+  }
+
+  .pick-progress { margin: 0 0 8px; font-family: var(--en); font-weight: 700; font-size: 18px; color: var(--sub); }
+  .done-title { margin: 0; font-size: 30px; font-weight: 800; }
+  .done-sub { margin: 0 0 8px; font-size: 15px; color: var(--sub); }
+  .done-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 12px; }
+  .done-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--card);
+    border: 2px solid var(--card-edge);
+    border-radius: 999px;
+    font: 700 17px var(--en);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .done-chip:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
   .stage.pop .big-pic { animation: pop .35s ease-out; }
   @keyframes pop { 0% { transform: scale(.6) rotate(-8deg); } 70% { transform: scale(1.12) rotate(3deg); } 100% { transform: scale(1); } }
 
@@ -179,13 +218,24 @@
     <div class="view" id="cardView">
       <div class="big-pic" id="pic"></div>
       <div class="big-word" id="word"></div>
-      <div class="big-ja" id="ja"></div>
+      <div class="ja-row">
+        <span class="big-ja" id="ja"></span>
+        <button class="info" id="infoBtn" type="button" aria-expanded="false" aria-controls="note" hidden>i</button>
+      </div>
+      <p class="note" id="note" hidden></p>
       <button class="btn again" id="again" type="button">もう一回きく</button>
     </div>
     <div class="view" id="pickView" hidden>
+      <p class="pick-progress" id="pickProgress"></p>
       <div class="choices" id="choices"></div>
       <p class="pick-msg" id="pickMsg"></p>
       <button class="btn" id="replay" type="button">🔊 きく</button>
+    </div>
+    <div class="view" id="doneView" hidden>
+      <p class="done-title">おわり！</p>
+      <p class="done-sub">きいた ことば。おすと もう一回きけるよ</p>
+      <div class="done-list" id="doneList"></div>
+      <button class="btn" id="restart" type="button">もういっかい</button>
     </div>
   </section>
 
@@ -261,6 +311,12 @@
       });
     }
     $("again").textContent = revealed ? "もう一回きく" : "こたえ";
+    // ⓘ は英語が見えてから。テストの答えを先に見せない
+    const note = NOTES[plain(word)];
+    $("infoBtn").hidden = !(revealed && note);
+    $("infoBtn").setAttribute("aria-expanded", "false");
+    $("note").hidden = true;
+    $("note").textContent = note || "";
   }
 
   function showWord(i, tapped) {
@@ -284,7 +340,11 @@
     }
   }
 
-  // えらぶ: 音だけ流して、同じページの4まいから当てる
+  // えらぶ: 音だけ流して、同じページの4まいから当てる。10もんで おわり。
+  // 点数は出さない。おわりの画面は「きいたことば」だけ
+  const ROUND = 10;
+  let queue = [];
+  let qNo = 0;
   let answer = -1;
   let locked = false;
 
@@ -296,10 +356,36 @@
     return a;
   }
 
+  function startRound(speak) {
+    const n = PAGES[page].words.length;
+    queue = shuffle([...Array(n).keys()]).slice(0, Math.min(ROUND, n));
+    qNo = 0;
+    $("doneView").hidden = true;
+    $("pickView").hidden = false;
+    newQuestion(speak);
+  }
+
+  function finishRound() {
+    const words = PAGES[page].words;
+    const list = $("doneList");
+    list.textContent = "";
+    queue.forEach((i) => {
+      const [pic, word] = words[i];
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "done-chip";
+      b.textContent = pic + " " + plain(word);
+      b.addEventListener("click", () => say(word));
+      list.appendChild(b);
+    });
+    $("pickView").hidden = true;
+    $("doneView").hidden = false;
+  }
+
   function newQuestion(speak) {
     const words = PAGES[page].words;
-    const idx = words.map((_, i) => i).filter((i) => i !== answer);
-    answer = idx[Math.floor(Math.random() * idx.length)];
+    answer = queue[qNo];
+    $("pickProgress").textContent = `${qNo + 1} / ${queue.length}`;
     const others = shuffle(words.map((_, i) => i).filter((i) => i !== answer)).slice(0, 3);
     const box = $("choices");
     box.textContent = "";
@@ -331,7 +417,14 @@
       en.textContent = plain(word);
       msg.appendChild(en);
       say(word);
-      setTimeout(() => { if (mode === "pick") newQuestion(true); }, 1600);
+      const round = queue;
+      setTimeout(() => {
+        // とちゅうで ページや モードが かわっていたら なにもしない
+        if (mode !== "pick" || queue !== round) return;
+        qNo += 1;
+        if (qNo < queue.length) newQuestion(true);
+        else finishRound();
+      }, 1600);
     } else {
       btn.classList.add("wrong");
       $("pickMsg").textContent = "ちがうよ。もう一回きいてみよう";
@@ -347,8 +440,9 @@
     $("cardView").hidden = m === "pick";
     $("cards").hidden = m === "pick";
     $("pickView").hidden = m !== "pick";
+    $("doneView").hidden = true;
     if (m === "pick") {
-      newQuestion(speak);
+      startRound(speak);
     } else {
       revealed = true;
       renderWord();
@@ -375,10 +469,7 @@
     $("prev").disabled = p === 0;
     $("next").disabled = p === PAGES.length - 1;
     showWord(0, false);
-    if (mode === "pick") {
-      answer = -1;
-      newQuestion(speak);
-    }
+    if (mode === "pick") startRound(speak);
   }
 
   PAGES.forEach((pg, i) => {
@@ -403,6 +494,12 @@
     say(PAGES[page].words[current][1]);
   });
   $("replay").addEventListener("click", () => say(PAGES[page].words[answer][1]));
+  $("restart").addEventListener("click", () => startRound(true));
+  $("infoBtn").addEventListener("click", () => {
+    const open = $("note").hidden;
+    $("note").hidden = !open;
+    $("infoBtn").setAttribute("aria-expanded", String(open));
+  });
   document.querySelectorAll(".mode").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode, true)));
   $("prev").addEventListener("click", () => page > 0 && showPage(page - 1, true));
   $("next").addEventListener("click", () => page < PAGES.length - 1 && showPage(page + 1, true));

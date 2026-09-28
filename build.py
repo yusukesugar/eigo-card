@@ -160,16 +160,19 @@ PWA_TAIL = """
 PWA_HOME = '<a class="home" href="./" aria-label="もどる">🏠</a>'
 
 
-def build(title: str, pages_src, hints: dict, name: str) -> None:
+def build(title: str, pages_src, hints: dict, notes: dict, name: str) -> None:
     AUDIO_DIR.mkdir(exist_ok=True)
     plain = lambda s: s.replace("{", "").replace("}", "")
     speeches = {plain(x[1]): (x[3] if len(x) > 3 else plain(x[1])) for _, items in pages_src for x in items}
+    unknown = set(notes) - set(speeches)
+    assert not unknown, f"notes のキーがカードに無い: {unknown}"
     audio = {w: audio_uri(w, s) for w, s in sorted(speeches.items())}
     pages = [{"title": t, "words": [list(x[:3]) for x in items]} for t, items in pages_src]
     data = (
         "const PAGES = " + json.dumps(pages, ensure_ascii=False) + ";\n"
         "const AUDIO = " + json.dumps(audio) + ";\n"
         "const HINTS = " + json.dumps(hints, ensure_ascii=False) + ";\n"
+        "const NOTES = " + json.dumps(notes, ensure_ascii=False) + ";\n"
     )
     html = (HERE / "template.html").read_text()
     assert html.count("/*DATA*/") == 1 and html.count("<!--HOME-->") == 1
@@ -198,8 +201,9 @@ def build_pwa_shell() -> None:
 
 
 if __name__ == "__main__":
+    from notes import PHRASE_NOTES, WORD_NOTES
     from phrases import PHRASE_PAGES
 
-    build("えいごカード", PAGES, WORD_HINTS, "words")
-    build("えいごでいおう", PHRASE_PAGES, PHRASE_HINTS, "phrases")
+    build("えいごカード", PAGES, WORD_HINTS, WORD_NOTES, "words")
+    build("えいごでいおう", PHRASE_PAGES, PHRASE_HINTS, PHRASE_NOTES, "phrases")
     build_pwa_shell()
