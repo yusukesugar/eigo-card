@@ -54,6 +54,22 @@
   .app .name { font-size: 24px; font-weight: 800; }
   .app .sub { font-family: var(--en); font-size: 17px; color: #5a6b82; }
   .status { margin: 0; font-size: 14px; opacity: .9; min-height: 1.5em; }
+  h1 { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  [hidden] { display: none !important; }
+
+  /* おやの きろく。タイトル長押しで出る */
+  .log { background: var(--white); color: var(--ink); border-radius: 20px; padding: 16px; display: grid; gap: 12px; }
+  .log-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .log h2 { margin: 0; font-size: 18px; }
+  .log-note { margin: 0; font-size: 13px; color: #5a6b82; }
+  .log-close { font: 800 14px var(--ja); border: 0; border-radius: 999px; padding: 6px 14px; background: var(--sky); color: var(--white); cursor: pointer; }
+  .log-table-wrap { overflow-x: auto; }
+  .log table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .log th, .log td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #e3ebf4; vertical-align: top; }
+  .log th { font-size: 12px; color: #5a6b82; font-weight: 800; white-space: nowrap; }
+  .log td.num { text-align: right; white-space: nowrap; }
+  .log .pages { font-size: 13px; color: #5a6b82; }
+  .log-empty { margin: 0; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -70,8 +86,77 @@
     </a>
   </div>
   <p class="status" id="status"></p>
+
+  <section class="log" id="log" hidden aria-label="つかったきろく">
+    <div class="log-head">
+      <h2>つかったきろく</h2>
+      <button class="log-close" id="logClose" type="button">とじる</button>
+    </div>
+    <p class="log-note">このiPadの中だけに ある きろくです。どこにも おくっていません。</p>
+    <div id="logBody"></div>
+  </section>
 </div>
 <script>
+  // おやの きろく: タイトルを 2びょう ながおしで ひらく
+  const APP_NAMES = { words: "カード", phrases: "ぶん" };
+
+  function renderLog() {
+    const body = document.getElementById("logBody");
+    body.textContent = "";
+    let all = {};
+    try { all = JSON.parse(localStorage.getItem("eigo-log") || "{}"); } catch (e) {}
+    const days = Object.keys(all).sort().reverse().slice(0, 14);
+    if (!days.length) {
+      const p = document.createElement("p");
+      p.className = "log-empty";
+      p.textContent = "まだ きろくが ありません。";
+      body.appendChild(p);
+      return;
+    }
+    const wrap = document.createElement("div");
+    wrap.className = "log-table-wrap";
+    const table = document.createElement("table");
+    table.innerHTML = "<thead><tr><th>ひ</th><th>さいしょ</th><th>ひらいた</th><th>おした</th><th>えらぶ</th><th>ページ</th></tr></thead>";
+    const tbody = document.createElement("tbody");
+    days.forEach((day) => {
+      const d = all[day];
+      const apps = Object.entries(d.apps || {});
+      const opens = apps.map(([id, a]) => `${APP_NAMES[id] || id} ${a.open}`).join(" / ");
+      const taps = apps.reduce((s, [, a]) => s + a.tap, 0);
+      const rounds = apps.reduce((s, [, a]) => s + a.round, 0);
+      const pages = apps.flatMap(([, a]) => Object.entries(a.pages))
+        .sort((x, y) => y[1] - x[1]).slice(0, 4).map(([t, n]) => `${t} ${n}`).join("、");
+      const tr = document.createElement("tr");
+      [day.slice(5), d.first || "", opens, taps, rounds ? `${rounds}かい` : "", pages].forEach((v, i) => {
+        const td = document.createElement("td");
+        td.textContent = v;
+        if (i === 3 || i === 4) td.className = "num";
+        if (i === 5) td.className = "pages";
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    body.appendChild(wrap);
+  }
+
+  const title = document.querySelector("h1");
+  let pressTimer = null;
+  const cancelPress = () => { clearTimeout(pressTimer); pressTimer = null; };
+  title.addEventListener("pointerdown", () => {
+    cancelPress();
+    pressTimer = setTimeout(() => {
+      renderLog();
+      document.getElementById("log").hidden = false;
+    }, 2000);
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach((e) => title.addEventListener(e, cancelPress));
+  title.addEventListener("contextmenu", (e) => e.preventDefault());
+  document.getElementById("logClose").addEventListener("click", () => {
+    document.getElementById("log").hidden = true;
+  });
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").then(() => navigator.serviceWorker.ready).then(() => {
       document.getElementById("status").textContent = "インターネットがなくても つかえます";

@@ -365,6 +365,24 @@ const NOTES = {"Let's eat!": "えいごには「いただきます」と ぴっ�
     $("note").textContent = note || "";
   }
 
+  // 親だけが見る きろく。端末の中だけに置き、どこにも送らない。ホーム画面のタイトル長押しで見る
+  const APP_ID = location.pathname.split("/").pop().replace(".html", "") || document.title;
+  function logEvent(kind) {
+    try {
+      const all = JSON.parse(localStorage.getItem("eigo-log") || "{}");
+      const now = new Date();
+      const day = now.toLocaleDateString("sv-SE");
+      const d = (all[day] ||= { first: now.toTimeString().slice(0, 5), apps: {} });
+      const a = (d.apps[APP_ID] ||= { open: 0, tap: 0, round: 0, pages: {} });
+      a[kind] += 1;
+      if (kind !== "open") {
+        const t = PAGES[page].title;
+        a.pages[t] = (a.pages[t] || 0) + 1;
+      }
+      localStorage.setItem("eigo-log", JSON.stringify(all));
+    } catch (e) {}
+  }
+
   // 絵だけで意味が決まらないページ（あいさつ）は、カードに日本語を小さく添える
   function fillPic(btn, pic, ja) {
     btn.textContent = pic;
@@ -390,6 +408,7 @@ const NOTES = {"Let's eat!": "えいごには「いただきます」と ぴっ�
     void stage.offsetWidth;
     stage.classList.add("pop");
     document.querySelectorAll(".card").forEach((c, j) => c.setAttribute("aria-pressed", j === i));
+    if (tapped) logEvent("tap");
     if (tapped && mode === "listen") {
       markHeard(i);
       say(word);
@@ -436,6 +455,7 @@ const NOTES = {"Let's eat!": "えいごには「いただきます」と ぴっ�
     });
     $("pickView").hidden = true;
     $("doneView").hidden = false;
+    logEvent("round");
   }
 
   function newQuestion(speak) {
@@ -465,6 +485,7 @@ const NOTES = {"Let's eat!": "えいごには「いただきます」と ぴっ�
     const word = PAGES[page].words[answer][1];
     if (i === answer) {
       locked = true;
+      logEvent("tap");
       btn.classList.add("right");
       const msg = $("pickMsg");
       msg.textContent = "せいかい！ ";
@@ -562,6 +583,7 @@ const NOTES = {"Let's eat!": "えいごには「いただきます」と ぴっ�
   // 音はタップのあとでないと鳴らないので、開いた直後の1問目は「もう一回きく」で流す
   setMode(mode, false);
   showPage(0, false);
+  logEvent("open");
 </script>
 
 <script>
