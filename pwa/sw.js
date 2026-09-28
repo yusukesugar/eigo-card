@@ -11,8 +11,11 @@ const CORE = [
   "icon-512.png",
 ];
 
+// cache: "reload" でブラウザの HTTP キャッシュを飛ばして取る。
+// これが無いと GitHub Pages の max-age=600 の間は古い HTML が新しい版にしまわれてしまう
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(VERSION).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
+  const fresh = CORE.map((u) => new Request(u, { cache: "reload" }));
+  event.waitUntil(caches.open(VERSION).then((c) => c.addAll(fresh)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
