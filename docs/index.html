@@ -78,15 +78,15 @@
   <div class="apps">
     <a class="app" href="words.html">
       <span class="pic">🐱</span>
-      <span><span class="name">えいごカード</span><br><span class="sub">cat, dog, apple ...</span></span>
+      <span><span class="name">英語カード</span><br><span class="sub">cat, dog, apple ...</span></span>
     </a>
     <a class="app" href="phrases.html">
       <span class="pic">💬</span>
-      <span><span class="name">えいごでいおう</span><br><span class="sub">I like cats.</span></span>
+      <span><span class="name">英語で言おう</span><br><span class="sub">I like cats.</span></span>
     </a>
     <a class="app" href="korean.html">
       <span class="pic">🇰🇷</span>
-      <span><span class="name">かんこくご</span><br><span class="sub">안녕하세요</span></span>
+      <span><span class="name">韓国語</span><br><span class="sub">안녕하세요</span></span>
     </a>
   </div>
   <p class="status" id="status"></p>
@@ -163,7 +163,7 @@
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").then(() => navigator.serviceWorker.ready).then(() => {
-      document.getElementById("status").textContent = "インターネットがなくても つかえます";
+      document.getElementById("status").textContent = "インターネットがなくても使えます";
     }).catch(() => {});
   }
 </script>

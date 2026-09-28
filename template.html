@@ -232,9 +232,9 @@
   <header>
     <h1><!--HOME-->{{TITLE}}</h1>
     <div class="modes" role="radiogroup" aria-label="モード">
-      <button class="mode" type="button" role="radio" data-mode="listen">きく</button>
+      <button class="mode" type="button" role="radio" data-mode="listen">聞く</button>
       <button class="mode" type="button" role="radio" data-mode="quiz">テスト</button>
-      <button class="mode" type="button" role="radio" data-mode="pick">えらぶ</button>
+      <button class="mode" type="button" role="radio" data-mode="pick">選ぶ</button>
     </div>
   </header>
   <p class="hint" id="hint"></p>
@@ -251,19 +251,19 @@
         <button class="info" id="infoBtn" type="button" aria-expanded="false" aria-controls="note" hidden>i</button>
       </div>
       <p class="note" id="note" hidden></p>
-      <button class="btn again" id="again" type="button">もう一回きく</button>
+      <button class="btn again" id="again" type="button">もう一回聞く</button>
     </div>
     <div class="view" id="pickView" hidden>
       <p class="pick-progress" id="pickProgress"></p>
       <div class="choices" id="choices"></div>
       <p class="pick-msg" id="pickMsg"></p>
-      <button class="btn" id="replay" type="button">🔊 きく</button>
+      <button class="btn" id="replay" type="button">🔊 聞く</button>
     </div>
     <div class="view" id="doneView" hidden>
-      <p class="done-title">おわり！</p>
-      <p class="done-sub">きいた ことば。おすと もう一回きけるよ</p>
+      <p class="done-title">終わり！</p>
+      <p class="done-sub">聞いた言葉。押すと、もう一回聞けるよ</p>
       <div class="done-list" id="doneList"></div>
-      <button class="btn" id="restart" type="button">もういっかい</button>
+      <button class="btn" id="restart" type="button">もう一回</button>
     </div>
   </section>
 
@@ -271,12 +271,12 @@
   </div>
 
   <div class="pager">
-    <button class="btn" id="prev" type="button">← まえ</button>
+    <button class="btn" id="prev" type="button">← 前</button>
     <div class="pageinfo">
       <div><b id="pno">1</b> / <b id="pmax">10</b> ページ</div>
-      <div>きいたカード <b id="n">0</b> / <b id="total">0</b></div>
+      <div>聞いたカード <b id="n">0</b> / <b id="total">0</b></div>
     </div>
-    <button class="btn" id="next" type="button">つぎ →</button>
+    <button class="btn" id="next" type="button">次 →</button>
   </div>
 </div>
 
@@ -339,7 +339,7 @@
         }
       });
     }
-    $("again").textContent = revealed ? "もう一回きく" : "こたえ";
+    $("again").textContent = revealed ? "もう一回聞く" : "答え";
     // ⓘ は英語が見えてから。テストの答えを先に見せない
     const note = NOTES[plain(word)];
     $("infoBtn").hidden = !(revealed && note);
@@ -470,7 +470,7 @@
       b.addEventListener("click", () => choose(b, i));
       box.appendChild(b);
     });
-    $("pickMsg").textContent = speak ? "なにかな？" : "「🔊 きく」をおしてね";
+    $("pickMsg").textContent = speak ? "何かな？" : "「🔊 聞く」を押してね";
     locked = false;
     if (speak) say(words[answer][1]);
   }
@@ -483,7 +483,7 @@
       logEvent("tap");
       btn.classList.add("right");
       const msg = $("pickMsg");
-      msg.textContent = "せいかい！ ";
+      msg.textContent = "正解！ ";
       const en = document.createElement("span");
       en.className = "en";
       en.textContent = plain(word);
@@ -499,7 +499,7 @@
       }, 1600);
     } else {
       btn.classList.add("wrong");
-      $("pickMsg").textContent = "ちがうよ。もう一回きいてみよう";
+      $("pickMsg").textContent = "ちがうよ。もう一回聞いてみよう";
     }
   }
 
