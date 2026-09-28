@@ -319,7 +319,7 @@
     const word = PAGES[page].words[current][1];
     const w = $("word");
     w.textContent = "";
-    w.classList.toggle("long", plain(word).length > 10);
+    w.classList.toggle("long", [...plain(word)].reduce((n, c) => n + (c.charCodeAt(0) > 0x2e80 ? 2 : 1), 0) > 10);
     // テストでは入れかえる語だけ伏せる。わくの文は見えたまま、くりかえし言えるように
     const hasSlot = word.includes("{");
     w.classList.toggle("hidden", !revealed && !hasSlot);

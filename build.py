@@ -113,13 +113,13 @@ LETTERS = [(f"{c} {c.lower()}", c, name, f"[[char LTRL]]{c}[[char NORM]]")
 PAGES += [("ABC A〜M", LETTERS[:13]), ("ABC N〜Z", LETTERS[13:])]
 
 
-def audio_uri(word: str, speech: str) -> str:
+def audio_uri(word: str, speech: str, voice: str = "Samantha", prefix: str = "") -> str:
     # macOS はファイル名の大文字小文字を区別しないので、文字の音声は別名にする
-    name = ("letter_" if speech != word else "") + word.replace(" ", "_")
+    name = prefix + ("letter_" if speech != word else "") + word.replace(" ", "_")
     m4a = AUDIO_DIR / f"{name}.m4a"
     if not m4a.exists():
         aiff = AUDIO_DIR / f"{name}.aiff"
-        subprocess.run(["say", "-v", "Samantha", "-r", "150", "-o", str(aiff), speech], check=True)
+        subprocess.run(["say", "-v", voice, "-r", "150", "-o", str(aiff), speech], check=True)
         subprocess.run(["afconvert", "-f", "m4af", "-d", "aac", "-b", "64000", str(aiff), str(m4a)], check=True)
     return "data:audio/mp4;base64," + base64.b64encode(m4a.read_bytes()).decode()
 
@@ -133,6 +133,11 @@ PHRASE_HINTS = {
     "listen": "えをおすと、ぶんが かわって しゃべるよ",
     "quiz": "？？？のところを いれて、ぶんを ぜんぶ いってみよう",
     "pick": "ぶんをきいて、あっている えをえらんでね",
+}
+KOREAN_HINTS = {
+    "listen": "カードをおすと、かんこくごで しゃべるよ",
+    "quiz": "かんこくごで なんていう？ いえたら「こたえ」をおしてね",
+    "pick": "おとをきいて、あっている えをえらんでね",
 }
 
 
@@ -160,13 +165,14 @@ PWA_TAIL = """
 PWA_HOME = '<a class="home" href="./">🏠 もどる</a>'
 
 
-def build(title: str, pages_src, hints: dict, notes: dict, name: str, labeled: frozenset = frozenset()) -> None:
+def build(title: str, pages_src, hints: dict, notes: dict, name: str, labeled: frozenset = frozenset(),
+          voice: str = "Samantha", audio_prefix: str = "") -> None:
     AUDIO_DIR.mkdir(exist_ok=True)
     plain = lambda s: s.replace("{", "").replace("}", "")
     speeches = {plain(x[1]): (x[3] if len(x) > 3 else plain(x[1])) for _, items in pages_src for x in items}
     unknown = set(notes) - set(speeches)
     assert not unknown, f"notes のキーがカードに無い: {unknown}"
-    audio = {w: audio_uri(w, s) for w, s in sorted(speeches.items())}
+    audio = {w: audio_uri(w, s, voice, audio_prefix) for w, s in sorted(speeches.items())}
     pages = [{"title": t, "words": [list(x[:3]) for x in items], "labels": t in labeled} for t, items in pages_src]
     data = (
         "const PAGES = " + json.dumps(pages, ensure_ascii=False) + ";\n"
@@ -203,7 +209,10 @@ def build_pwa_shell() -> None:
 if __name__ == "__main__":
     from notes import PHRASE_NOTES, WORD_NOTES
     from phrases import LABELED_PAGES, PHRASE_PAGES
+    from korean import KOREAN_LABELED_PAGES, KOREAN_NOTES, KOREAN_PAGES
 
     build("えいごカード", PAGES, WORD_HINTS, WORD_NOTES, "words")
     build("えいごでいおう", PHRASE_PAGES, PHRASE_HINTS, PHRASE_NOTES, "phrases", frozenset(LABELED_PAGES))
+    build("かんこくご", KOREAN_PAGES, KOREAN_HINTS, KOREAN_NOTES, "korean", frozenset(KOREAN_LABELED_PAGES),
+          voice="Yuna", audio_prefix="ko_")
     build_pwa_shell()
