@@ -690,15 +690,34 @@ const PICK_SHOWS_WORD = false;
       $("reportWhere").textContent = "どれか選ぶか、書いてね";
       return;
     }
+    const r = { at: new Date().toLocaleString("sv-SE").slice(0, 16), ...reportContext(), kind, text, screen: `${innerWidth}x${innerHeight}` };
+    // まず端末に残す（共有をやめても、ホーム画面の親の記録で見られるように）
     try {
       const all = JSON.parse(localStorage.getItem("eigo-reports") || "[]");
-      const now = new Date();
-      all.push({ at: now.toLocaleString("sv-SE").slice(0, 16), ...reportContext(), kind, text, screen: `${innerWidth}x${innerHeight}` });
+      all.push(r);
       localStorage.setItem("eigo-reports", JSON.stringify(all));
     } catch (e) {}
     $("reportSend").disabled = true;
-    $("reportDone").hidden = false;
-    setTimeout(() => $("report").close(), 1800);
+    const done = (msg) => {
+      $("reportDone").textContent = msg;
+      $("reportDone").hidden = false;
+      setTimeout(() => $("report").close(), 1800);
+    };
+    // iPad の共有メニューで、娘が自分でメッセージや LINE を選んでお父さんに送る。
+    // あて先はコードに書かない（公開リポジトリなので）
+    if (navigator.share) {
+      const body = [
+        "📮 えいごアプリから",
+        `【${r.kind || "お知らせ"}】${r.text}`,
+        `場所：${r.appTitle} / ${r.page} / ${r.card}（${MODE_NAMES[r.mode]}）`,
+        r.at,
+      ].join("\n");
+      navigator.share({ text: body })
+        .then(() => done("送れたよ！ ありがとう！"))
+        .catch(() => done("送らなかったけど、iPad には残したよ。"));
+    } else {
+      done("受けつけました！ お父さんが あとで見るよ。ありがとう！");
+    }
   });
   $("prev").addEventListener("click", () => page > 0 && showPage(page - 1, true));
   $("next").addEventListener("click", () => page < PAGES.length - 1 && showPage(page + 1, true));
