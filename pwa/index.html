@@ -70,6 +70,9 @@
   .log td.num { text-align: right; white-space: nowrap; }
   .log .pages { font-size: 13px; color: #5a6b82; }
   .log-empty { margin: 0; font-size: 14px; }
+  .reports { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; font-size: 14px; }
+  .reports .meta { color: #5a6b82; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .reports .kind { font-weight: 800; }
 </style>
 </head>
 <body>
@@ -98,11 +101,59 @@
     </div>
     <p class="log-note">このiPadの中だけに ある きろくです。どこにも おくっていません。</p>
     <div id="logBody"></div>
+
+    <div class="log-head">
+      <h2>娘からのお知らせ</h2>
+      <button class="log-close" id="reportsCopy" type="button">コピー</button>
+    </div>
+    <p class="log-note" id="reportsNote">アプリの「📮 お父さんに知らせる」から届いたもの。コピーして Claude に貼れば直せます。</p>
+    <ol class="reports" id="reportsBody"></ol>
   </section>
 </div>
 <script>
   // おやの きろく: タイトルを 2びょう ながおしで ひらく
   const APP_NAMES = { words: "カード", phrases: "ぶん", korean: "かんこく" };
+
+  // 娘からの不具合報告（アプリ側で localStorage の eigo-reports にためている）
+  function loadReports() {
+    try { return JSON.parse(localStorage.getItem("eigo-reports") || "[]"); } catch (e) { return []; }
+  }
+  const reportLine = (r) =>
+    `${r.at} ${r.appTitle} / ${r.page} / ${r.card}（${r.mode}） ${r.kind}${r.text ? "：" + r.text : ""} [${r.screen}]`;
+
+  function renderReports() {
+    const list = document.getElementById("reportsBody");
+    list.textContent = "";
+    const reports = loadReports().slice().reverse();
+    if (!reports.length) {
+      const li = document.createElement("li");
+      li.textContent = "まだありません。";
+      list.appendChild(li);
+      return;
+    }
+    reports.forEach((r) => {
+      const li = document.createElement("li");
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = `${r.at} ・ ${r.appTitle} / ${r.page} / ${r.card}`;
+      const body = document.createElement("div");
+      const kind = document.createElement("span");
+      kind.className = "kind";
+      kind.textContent = r.kind || "（選択なし）";
+      body.appendChild(kind);
+      if (r.text) body.appendChild(document.createTextNode("：" + r.text));
+      li.append(meta, body);
+      list.appendChild(li);
+    });
+  }
+
+  document.getElementById("reportsCopy").addEventListener("click", () => {
+    const text = loadReports().map(reportLine).join("\n") || "（お知らせなし）";
+    const note = document.getElementById("reportsNote");
+    navigator.clipboard.writeText(text)
+      .then(() => { note.textContent = `${loadReports().length}件をコピーしました。Claude に貼ってください。`; })
+      .catch(() => { note.textContent = "コピーできませんでした。下の一覧を長押しで選んでコピーしてください。"; });
+  });
 
   function renderLog() {
     const body = document.getElementById("logBody");
@@ -152,6 +203,7 @@
     cancelPress();
     pressTimer = setTimeout(() => {
       renderLog();
+      renderReports();
       document.getElementById("log").hidden = false;
     }, 2000);
   });

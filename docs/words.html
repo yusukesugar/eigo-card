@@ -237,6 +237,24 @@
   }
 
   .pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+  /* 不具合報告 */
+  .report-open { margin-top: 6px; font: 800 13px var(--ja); color: var(--white); background: var(--sky-deep); border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .report-open:focus-visible { outline: 3px solid var(--white); outline-offset: 2px; }
+  .report { border: 0; border-radius: 24px; padding: 0; width: min(480px, calc(100% - 32px)); color: var(--ink); background: var(--white); }
+  .report::backdrop { background: rgba(28, 43, 64, .5); }
+  .report-form { display: grid; gap: 12px; padding: 20px; }
+  .report h2 { margin: 0; font-size: 22px; }
+  .report-where { margin: 0; font-size: 14px; color: var(--sub); }
+  .report-kinds { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .report-kinds legend { font-weight: 800; margin-bottom: 8px; padding: 0; }
+  .report-kinds label { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 2px solid var(--card-edge); border-radius: 14px; background: var(--card); font-weight: 800; cursor: pointer; }
+  .report-kinds label:has(input:checked) { border-color: var(--pop); background: var(--white); }
+  .report-text-label { font-weight: 800; font-size: 15px; }
+  .report textarea { font: 16px var(--ja); padding: 10px; border: 2px solid #d6e2ef; border-radius: 12px; resize: vertical; width: 100%; box-sizing: border-box; }
+  .report-done { margin: 0; font-weight: 800; color: #1f8a4c; }
+  .report-actions { display: flex; justify-content: space-between; gap: 12px; }
+  .report-cancel { background: #8a9bb0; box-shadow: 0 4px 0 #6b7c91; }
   .pageinfo { color: var(--white); text-align: center; font-size: 14px; line-height: 1.5; }
   .pageinfo b { font-family: var(--en); font-size: 18px; }
 
@@ -291,10 +309,33 @@
     <div class="pageinfo">
       <div><b id="pno">1</b> / <b id="pmax">10</b> ページ</div>
       <div>聞いたカード <b id="n">0</b> / <b id="total">0</b></div>
+      <button class="report-open" id="reportOpen" type="button">📮 お父さんに知らせる</button>
     </div>
     <button class="btn" id="next" type="button">次 →</button>
   </div>
 </div>
+
+<!-- 娘からの不具合報告。この端末の中だけに残し、ホーム画面の親の記録で見る -->
+<dialog class="report" id="report" aria-labelledby="reportTitle">
+  <form class="report-form" id="reportForm" method="dialog">
+    <h2 id="reportTitle">お父さんに知らせる</h2>
+    <p class="report-where" id="reportWhere"></p>
+    <fieldset class="report-kinds">
+      <legend>どうしたの？</legend>
+      <label><input type="radio" name="kind" value="動かない" id="kindBroken"> 動かない</label>
+      <label><input type="radio" name="kind" value="音がへん" id="kindSound"> 音がへん</label>
+      <label><input type="radio" name="kind" value="まちがってる" id="kindWrong"> まちがってる</label>
+      <label><input type="radio" name="kind" value="こうしてほしい" id="kindWish"> こうしてほしい</label>
+    </fieldset>
+    <label class="report-text-label" for="reportText">くわしく（書かなくてもいいよ）</label>
+    <textarea id="reportText" rows="3"></textarea>
+    <p class="report-done" id="reportDone" hidden>受けつけました！ お父さんが あとで見るよ。ありがとう！</p>
+    <div class="report-actions">
+      <button class="btn report-cancel" id="reportCancel" type="button">やめる</button>
+      <button class="btn" id="reportSend" type="button">知らせる</button>
+    </div>
+  </form>
+</dialog>
 
 <script>
 const PAGES = [{"title": "動物", "words": [["🐱", "cat", "猫"], ["🐶", "dog", "犬"], ["🐰", "rabbit", "うさぎ"], ["🐻", "bear", "熊"], ["🦁", "lion", "ライオン"], ["🐘", "elephant", "象"], ["🐵", "monkey", "猿"], ["🐷", "pig", "豚"], ["🐮", "cow", "牛"], ["🐴", "horse", "馬"], ["🐧", "penguin", "ペンギン"], ["🐸", "frog", "カエル"]], "labels": false}, {"title": "海・虫", "words": [["🐟", "fish", "魚"], ["🐳", "whale", "クジラ"], ["🐬", "dolphin", "イルカ"], ["🐙", "octopus", "タコ"], ["🦀", "crab", "カニ"], ["🦈", "shark", "サメ"], ["🐢", "turtle", "カメ"], ["🦋", "butterfly", "チョウ"], ["🐝", "bee", "ハチ"], ["🐜", "ant", "アリ"], ["🐌", "snail", "カタツムリ"], ["🕷️", "spider", "クモ（虫）"]], "labels": false}, {"title": "食べ物", "words": [["🍎", "apple", "りんご"], ["🍌", "banana", "バナナ"], ["🍇", "grapes", "ぶどう"], ["🍓", "strawberry", "いちご"], ["🍉", "watermelon", "すいか"], ["🍊", "orange", "みかん"], ["🍞", "bread", "パン"], ["🍚", "rice", "ご飯"], ["🥚", "egg", "卵"], ["🍰", "cake", "ケーキ"], ["🍦", "ice cream", "アイス"], ["🥛", "milk", "牛乳"]], "labels": false}, {"title": "乗り物", "words": [["🚗", "car", "車"], ["🚌", "bus", "バス"], ["🚃", "train", "電車"], ["🚲", "bicycle", "自転車"], ["✈️", "airplane", "飛行機"], ["🚢", "ship", "船"], ["🚀", "rocket", "ロケット"], ["🚕", "taxi", "タクシー"], ["🚚", "truck", "トラック"], ["🚒", "fire engine", "消防車"], ["🚑", "ambulance", "救急車"], ["🚁", "helicopter", "ヘリコプター"]], "labels": false}, {"title": "色・形", "words": [["🔴", "red", "赤"], ["🔵", "blue", "青"], ["🟡", "yellow", "黄色"], ["🟢", "green", "緑"], ["🟠", "orange", "オレンジ色"], ["🟣", "purple", "紫"], ["⚫", "black", "黒"], ["⚪", "white", "白"], ["🟤", "brown", "茶色"], ["⭕", "circle", "丸"], ["🔺", "triangle", "三角"], ["❤️", "heart", "ハート"]], "labels": false}, {"title": "数 1〜12", "words": [["1", "one", "一"], ["2", "two", "二"], ["3", "three", "三"], ["4", "four", "四"], ["5", "five", "五"], ["6", "six", "六"], ["7", "seven", "七"], ["8", "eight", "八"], ["9", "nine", "九"], ["10", "ten", "十"], ["11", "eleven", "十一"], ["12", "twelve", "十二"]], "labels": false}, {"title": "数 13〜100", "words": [["13", "thirteen", "十三"], ["14", "fourteen", "十四"], ["15", "fifteen", "十五"], ["16", "sixteen", "十六"], ["17", "seventeen", "十七"], ["18", "eighteen", "十八"], ["19", "nineteen", "十九"], ["20", "twenty", "二十"], ["0", "zero", "ゼロ"], ["30", "thirty", "三十"], ["50", "fifty", "五十"], ["100", "one hundred", "百"]], "labels": false}, {"title": "体", "words": [["🙂", "face", "顔"], ["👁️", "eye", "目"], ["👂", "ear", "耳"], ["👃", "nose", "鼻"], ["👄", "mouth", "口"], ["🦷", "tooth", "歯"], ["✋", "hand", "手"], ["👆", "finger", "指"], ["💪", "arm", "腕"], ["🦶", "foot", "足"], ["🦴", "bone", "骨"], ["🧠", "brain", "脳"]], "labels": false}, {"title": "人・家族", "words": [["🙋", "I", "私"], ["🫵", "you", "あなた"], ["👦", "he", "彼（男の子）"], ["👧", "she", "彼女（女の子）"], ["👫", "we", "私たち"], ["👩", "mother", "お母さん"], ["👨", "father", "お父さん"], ["👭", "sister", "姉・妹"], ["👬", "brother", "兄・弟"], ["👶", "baby", "赤ちゃん"], ["👵", "grandmother", "おばあちゃん"], ["👴", "grandfather", "おじいちゃん"]], "labels": false}, {"title": "学校", "words": [["🏫", "school", "学校"], ["✏️", "pencil", "鉛筆"], ["🖊️", "pen", "ペン"], ["🖍️", "crayon", "クレヨン"], ["📓", "notebook", "ノート"], ["📏", "ruler", "定規"], ["✂️", "scissors", "はさみ"], ["🎒", "backpack", "ランドセル"], ["🎨", "paints", "絵の具"], ["🎹", "piano", "ピアノ"], ["⚽", "ball", "ボール"], ["📅", "calendar", "カレンダー"]], "labels": false}, {"title": "家", "words": [["🏠", "house", "家"], ["🚪", "door", "ドア"], ["🛏️", "bed", "ベッド"], ["🪑", "chair", "いす"], ["🕐", "clock", "時計"], ["🔑", "key", "鍵"], ["📖", "book", "本"], ["☕", "cup", "カップ"], ["🥄", "spoon", "スプーン"], ["☂️", "umbrella", "傘"], ["👟", "shoes", "靴"], ["🛁", "bath", "お風呂"]], "labels": false}, {"title": "空・自然", "words": [["☀️", "sun", "太陽"], ["🌙", "moon", "月"], ["⭐", "star", "星"], ["🌈", "rainbow", "虹"], ["☁️", "cloud", "雲"], ["🌧️", "rain", "雨"], ["❄️", "snow", "雪"], ["🌳", "tree", "木"], ["🌸", "flower", "花"], ["⛰️", "mountain", "山"], ["🏞️", "river", "川"], ["🌊", "sea", "海"]], "labels": false}, {"title": "お父さんの仕事", "words": [["💻", "computer", "コンピューター"], ["⌨️", "keyboard", "キーボード"], ["🖱️", "mouse", "マウス（ねずみと同じ）"], ["🖥️", "screen", "画面"], ["📱", "smartphone", "スマホ"], ["🤖", "robot", "ロボット"], ["🌐", "internet", "インターネット"], ["📧", "email", "メール"], ["🎮", "game", "ゲーム"], ["🐛", "bug", "バグ（虫と同じ）"], ["💡", "idea", "アイデア"], ["🔋", "battery", "電池"]], "labels": false}, {"title": "ABC A〜M", "words": [["A a", "A", "エー"], ["B b", "B", "ビー"], ["C c", "C", "シー"], ["D d", "D", "ディー"], ["E e", "E", "イー"], ["F f", "F", "エフ"], ["G g", "G", "ジー"], ["H h", "H", "エイチ"], ["I i", "I", "アイ"], ["J j", "J", "ジェー"], ["K k", "K", "ケー"], ["L l", "L", "エル"], ["M m", "M", "エム"]], "labels": false}, {"title": "ABC N〜Z", "words": [["N n", "N", "エヌ"], ["O o", "O", "オー"], ["P p", "P", "ピー"], ["Q q", "Q", "キュー"], ["R r", "R", "アール"], ["S s", "S", "エス"], ["T t", "T", "ティー"], ["U u", "U", "ユー"], ["V v", "V", "ブイ"], ["W w", "W", "ダブリュー"], ["X x", "X", "エックス"], ["Y y", "Y", "ワイ"], ["Z z", "Z", "ズィー"]], "labels": false}];
@@ -612,6 +653,41 @@ const PICK_SHOWS_WORD = false;
     $("infoBtn").setAttribute("aria-expanded", String(open));
   });
   document.querySelectorAll(".mode").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode, true)));
+
+  // 不具合報告: いまどのアプリ・ページ・カードにいたかを 自動で添えて、端末の中にためる
+  function reportContext() {
+    const words = PAGES[page].words;
+    const i = mode === "pick" ? answer : current;
+    const card = words[i] ? plain(words[i][1]) : "";
+    return { app: APP_ID, appTitle: document.title, page: PAGES[page].title, card, mode };
+  }
+  const MODE_NAMES = { listen: "聞く", quiz: "テスト", pick: "選ぶ" };
+  $("reportOpen").addEventListener("click", () => {
+    const c = reportContext();
+    $("reportWhere").textContent = `${c.appTitle} ・ ${c.page} ・ ${c.card}（${MODE_NAMES[c.mode]}）`;
+    $("reportForm").reset();
+    $("reportDone").hidden = true;
+    $("reportSend").disabled = false;
+    $("report").showModal();
+  });
+  $("reportCancel").addEventListener("click", () => $("report").close());
+  $("reportSend").addEventListener("click", () => {
+    const kind = ($("reportForm").querySelector("input[name=kind]:checked") || {}).value || "";
+    const text = $("reportText").value.trim();
+    if (!kind && !text) {
+      $("reportWhere").textContent = "どれか選ぶか、書いてね";
+      return;
+    }
+    try {
+      const all = JSON.parse(localStorage.getItem("eigo-reports") || "[]");
+      const now = new Date();
+      all.push({ at: now.toLocaleString("sv-SE").slice(0, 16), ...reportContext(), kind, text, screen: `${innerWidth}x${innerHeight}` });
+      localStorage.setItem("eigo-reports", JSON.stringify(all));
+    } catch (e) {}
+    $("reportSend").disabled = true;
+    $("reportDone").hidden = false;
+    setTimeout(() => $("report").close(), 1800);
+  });
   $("prev").addEventListener("click", () => page > 0 && showPage(page - 1, true));
   $("next").addEventListener("click", () => page < PAGES.length - 1 && showPage(page + 1, true));
   // 音はタップのあとでないと鳴らないので、開いた直後の1問目は「もう一回きく」で流す

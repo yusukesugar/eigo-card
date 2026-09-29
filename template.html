@@ -223,6 +223,24 @@
   }
 
   .pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+  /* 不具合報告 */
+  .report-open { margin-top: 6px; font: 800 13px var(--ja); color: var(--white); background: var(--sky-deep); border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .report-open:focus-visible { outline: 3px solid var(--white); outline-offset: 2px; }
+  .report { border: 0; border-radius: 24px; padding: 0; width: min(480px, calc(100% - 32px)); color: var(--ink); background: var(--white); }
+  .report::backdrop { background: rgba(28, 43, 64, .5); }
+  .report-form { display: grid; gap: 12px; padding: 20px; }
+  .report h2 { margin: 0; font-size: 22px; }
+  .report-where { margin: 0; font-size: 14px; color: var(--sub); }
+  .report-kinds { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .report-kinds legend { font-weight: 800; margin-bottom: 8px; padding: 0; }
+  .report-kinds label { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 2px solid var(--card-edge); border-radius: 14px; background: var(--card); font-weight: 800; cursor: pointer; }
+  .report-kinds label:has(input:checked) { border-color: var(--pop); background: var(--white); }
+  .report-text-label { font-weight: 800; font-size: 15px; }
+  .report textarea { font: 16px var(--ja); padding: 10px; border: 2px solid #d6e2ef; border-radius: 12px; resize: vertical; width: 100%; box-sizing: border-box; }
+  .report-done { margin: 0; font-weight: 800; color: #1f8a4c; }
+  .report-actions { display: flex; justify-content: space-between; gap: 12px; }
+  .report-cancel { background: #8a9bb0; box-shadow: 0 4px 0 #6b7c91; }
   .pageinfo { color: var(--white); text-align: center; font-size: 14px; line-height: 1.5; }
   .pageinfo b { font-family: var(--en); font-size: 18px; }
 
@@ -277,10 +295,33 @@
     <div class="pageinfo">
       <div><b id="pno">1</b> / <b id="pmax">10</b> ページ</div>
       <div>聞いたカード <b id="n">0</b> / <b id="total">0</b></div>
+      <button class="report-open" id="reportOpen" type="button">📮 お父さんに知らせる</button>
     </div>
     <button class="btn" id="next" type="button">次 →</button>
   </div>
 </div>
+
+<!-- 娘からの不具合報告。この端末の中だけに残し、ホーム画面の親の記録で見る -->
+<dialog class="report" id="report" aria-labelledby="reportTitle">
+  <form class="report-form" id="reportForm" method="dialog">
+    <h2 id="reportTitle">お父さんに知らせる</h2>
+    <p class="report-where" id="reportWhere"></p>
+    <fieldset class="report-kinds">
+      <legend>どうしたの？</legend>
+      <label><input type="radio" name="kind" value="動かない" id="kindBroken"> 動かない</label>
+      <label><input type="radio" name="kind" value="音がへん" id="kindSound"> 音がへん</label>
+      <label><input type="radio" name="kind" value="まちがってる" id="kindWrong"> まちがってる</label>
+      <label><input type="radio" name="kind" value="こうしてほしい" id="kindWish"> こうしてほしい</label>
+    </fieldset>
+    <label class="report-text-label" for="reportText">くわしく（書かなくてもいいよ）</label>
+    <textarea id="reportText" rows="3"></textarea>
+    <p class="report-done" id="reportDone" hidden>受けつけました！ お父さんが あとで見るよ。ありがとう！</p>
+    <div class="report-actions">
+      <button class="btn report-cancel" id="reportCancel" type="button">やめる</button>
+      <button class="btn" id="reportSend" type="button">知らせる</button>
+    </div>
+  </form>
+</dialog>
 
 <script>
 /*DATA*/
@@ -593,6 +634,41 @@
     $("infoBtn").setAttribute("aria-expanded", String(open));
   });
   document.querySelectorAll(".mode").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode, true)));
+
+  // 不具合報告: いまどのアプリ・ページ・カードにいたかを 自動で添えて、端末の中にためる
+  function reportContext() {
+    const words = PAGES[page].words;
+    const i = mode === "pick" ? answer : current;
+    const card = words[i] ? plain(words[i][1]) : "";
+    return { app: APP_ID, appTitle: document.title, page: PAGES[page].title, card, mode };
+  }
+  const MODE_NAMES = { listen: "聞く", quiz: "テスト", pick: "選ぶ" };
+  $("reportOpen").addEventListener("click", () => {
+    const c = reportContext();
+    $("reportWhere").textContent = `${c.appTitle} ・ ${c.page} ・ ${c.card}（${MODE_NAMES[c.mode]}）`;
+    $("reportForm").reset();
+    $("reportDone").hidden = true;
+    $("reportSend").disabled = false;
+    $("report").showModal();
+  });
+  $("reportCancel").addEventListener("click", () => $("report").close());
+  $("reportSend").addEventListener("click", () => {
+    const kind = ($("reportForm").querySelector("input[name=kind]:checked") || {}).value || "";
+    const text = $("reportText").value.trim();
+    if (!kind && !text) {
+      $("reportWhere").textContent = "どれか選ぶか、書いてね";
+      return;
+    }
+    try {
+      const all = JSON.parse(localStorage.getItem("eigo-reports") || "[]");
+      const now = new Date();
+      all.push({ at: now.toLocaleString("sv-SE").slice(0, 16), ...reportContext(), kind, text, screen: `${innerWidth}x${innerHeight}` });
+      localStorage.setItem("eigo-reports", JSON.stringify(all));
+    } catch (e) {}
+    $("reportSend").disabled = true;
+    $("reportDone").hidden = false;
+    setTimeout(() => $("report").close(), 1800);
+  });
   $("prev").addEventListener("click", () => page > 0 && showPage(page - 1, true));
   $("next").addEventListener("click", () => page < PAGES.length - 1 && showPage(page + 1, true));
   // 音はタップのあとでないと鳴らないので、開いた直後の1問目は「もう一回きく」で流す
