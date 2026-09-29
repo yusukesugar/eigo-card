@@ -372,8 +372,12 @@ const PICK_SHOWS_WORD = false;
     if (saved === "quiz" || saved === "pick") mode = saved;
   } catch (e) {}
 
+  // 「聞いたカード」は、どのモードでも そのカードの音を聞いたら数える（聞く・テストの答え・選ぶの正解）。
+  // アプリを閉じても消えないよう端末に残す。キーは ページ名＋語（並びが変わってもずれない）
+  const heardKey = (p, i) => PAGES[p].title + ":" + plain(PAGES[p].words[i][1]);
   function markHeard(i) {
-    heard.add(page + ":" + i);
+    heard.add(heardKey(page, i));
+    try { localStorage.setItem("eigo-heard-" + APP_ID, JSON.stringify([...heard])); } catch (e) {}
     $("cards").children[i].classList.add("heard");
     $("n").textContent = heard.size;
   }
@@ -415,6 +419,12 @@ const PICK_SHOWS_WORD = false;
 
   // 親だけが見る きろく。端末の中だけに置き、どこにも送らない。ホーム画面のタイトル長押しで見る
   const APP_ID = location.pathname.split("/").pop().replace(".html", "") || document.title;
+
+  // 前に聞いたカードを読みこむ。いまのカードに無いもの（ページ名が変わった等）は数えない
+  try {
+    const valid = new Set(PAGES.flatMap((pg, p) => pg.words.map((_, i) => heardKey(p, i))));
+    JSON.parse(localStorage.getItem("eigo-heard-" + APP_ID) || "[]").forEach((k) => valid.has(k) && heard.add(k));
+  } catch (e) {}
   function logEvent(kind) {
     try {
       const all = JSON.parse(localStorage.getItem("eigo-log") || "{}");
@@ -560,6 +570,7 @@ const PICK_SHOWS_WORD = false;
     if (i === answer) {
       locked = true;
       logEvent("tap");
+      markHeard(answer);
       btn.classList.add("right");
       const msg = $("pickMsg");
       msg.textContent = "正解！ ";
@@ -607,7 +618,7 @@ const PICK_SHOWS_WORD = false;
     PAGES[p].words.forEach(([pic, word, ja], i) => {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "card" + (heard.has(p + ":" + i) ? " heard" : "") + (isText(pic) ? " txt" : "");
+      b.className = "card" + (heard.has(heardKey(p, i)) ? " heard" : "") + (isText(pic) ? " txt" : "");
       fillPic(b, pic, PAGES[p].labels ? ja : "");
       b.setAttribute("aria-label", word);
       b.addEventListener("click", () => showWord(i, true));
@@ -637,6 +648,7 @@ const PICK_SHOWS_WORD = false;
   });
   $("pmax").textContent = PAGES.length;
   $("total").textContent = PAGES.reduce((s, pg) => s + pg.words.length, 0);
+  $("n").textContent = heard.size;
   $("again").addEventListener("click", () => {
     if (!revealed) {
       revealed = true;
