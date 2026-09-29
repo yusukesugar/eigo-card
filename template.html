@@ -335,12 +335,24 @@
   // ぶんは入れかえる語を {} でかこんでいる。音と表示では外す
   const plain = (s) => s.replace(/[{}]/g, "");
 
+  // 音は1つの Audio を使い回す（iPad は、タップで一度鳴らした Audio でないと あとから鳴らせないため）。
+  // 切りかえるときは load() で前の音を捨ててから鳴らす
   const player = new Audio();
+  player.preload = "auto";
   function say(word) {
     player.pause();
     player.src = AUDIO[plain(word)];
-    player.currentTime = 0;
-    player.play().catch(() => {});
+    player.load();
+    return player.play().catch(() => {});
+  }
+
+  // いま鳴っている音が終わるまで待つ（最長 max ミリ秒）
+  function afterSound(max) {
+    return new Promise((resolve) => {
+      if (player.paused || player.ended) return resolve();
+      const t = setTimeout(resolve, max);
+      player.addEventListener("ended", () => { clearTimeout(t); resolve(); }, { once: true });
+    });
   }
 
   // 絵文字でなく文字そのもの（数字・アルファベット）のカードは英字フォントで出す
@@ -559,15 +571,18 @@
       en.className = "en";
       en.textContent = plain(word);
       msg.appendChild(en);
-      say(word);
       const round = queue;
-      setTimeout(() => {
-        // とちゅうで ページや モードが かわっていたら なにもしない
-        if (mode !== "pick" || queue !== round) return;
-        qNo += 1;
-        if (qNo < queue.length) newQuestion(true);
-        else finishRound();
-      }, 1600);
+      // 正解の音を 最後まで聞いてから 次の問題へ（長い文だと 次の音が かぶっていた）
+      say(word)
+        .then(() => afterSound(4000))
+        .then(() => new Promise((r) => setTimeout(r, 700)))
+        .then(() => {
+          // とちゅうで ページや モードが かわっていたら なにもしない
+          if (mode !== "pick" || queue !== round) return;
+          qNo += 1;
+          if (qNo < queue.length) newQuestion(true);
+          else finishRound();
+        });
     } else {
       btn.classList.add("wrong");
       $("pickMsg").textContent = "ちがうよ。もう一回聞いてみよう";

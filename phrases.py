@@ -58,7 +58,7 @@ PHRASE_PAGES = [
         ("🍌", "Can I have {a banana}?", "バナナちょうだい"), ("🍬", "Can I have {some candy}?", "あめちょうだい"),
         ("🍞", "Can I have {some bread}?", "パンちょうだい"), ("🍚", "Can I have {some rice}?", "ご飯ちょうだい"),
         ("➕", "Can I have {one more}?", "もう一つちょうだい"), ("🤗", "Can I have {a hug}?", "ぎゅってして"),
-        ("🤧", "Can I have {a tissue}?", "ティッシュちょうだい"), ("✏️", "Can I have {a pencil}?", "鉛筆ちょうだい"),
+        ("🤧", "Can I have {a tissue}?", "ティッシュちょうだい"),
     ]),
     ("しよう Let's", [
         ("🎲", "Let's {play a game}!", "ゲームしよう"), ("🚶", "Let's {go}!", "行こう"),
