@@ -6,6 +6,7 @@ const CORE = [
   "words.html",
   "phrases.html",
   "korean.html",
+  "chinese.html",
   "manifest.webmanifest",
   "icon-180.png",
   "icon-192.png",

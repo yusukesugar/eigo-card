@@ -375,7 +375,8 @@ const PICK_SHOWS_WORD = false;
   }
 
   // 絵文字でなく文字そのもの（数字・アルファベット）のカードは英字フォントで出す
-  const isText = (pic) => /^[\x20-\x7e㄰-㆏가-힣]+$/.test(pic);
+  // 中国語の声調カード（mā など）も文字カード。À〜ɏ は声調記号つきのローマ字
+  const isText = (pic) => /^[\x20-\x7eÀ-ɏ㄰-㆏가-힣]+$/.test(pic);
 
   let mode = "listen";
   let revealed = true;

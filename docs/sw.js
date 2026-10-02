@@ -1,11 +1,12 @@
 // VERSION は build.py がファイルの中身から作る。中身が変わると古いキャッシュを捨てて入れ直す
-const VERSION = "eigo-dc56a05bd6d7";
+const VERSION = "eigo-897746c65a4e";
 const CORE = [
   "./",
   "index.html",
   "words.html",
   "phrases.html",
   "korean.html",
+  "chinese.html",
   "manifest.webmanifest",
   "icon-180.png",
   "icon-192.png",

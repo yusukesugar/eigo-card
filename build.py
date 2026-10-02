@@ -134,6 +134,11 @@ PHRASE_HINTS = {
     "quiz": "？？？のところを入れて、文を全部言ってみよう",
     "pick": "文を聞いて、合っている絵を選んでね",
 }
+CHINESE_HINTS = {
+    "listen": "カードを押すと、中国語でしゃべるよ",
+    "quiz": "中国語で何て言う？ 言えたら「答え」を押してね",
+    "pick": "音を聞いて、合っている絵を選んでね",
+}
 KOREAN_HINTS = {
     "listen": "カードを押すと、韓国語でしゃべるよ",
     "quiz": "韓国語で何て言う？ 言えたら「答え」を押してね",
@@ -165,14 +170,14 @@ PWA_TAIL = """
 PWA_HOME = '<a class="home" href="./">🏠 戻る</a>'
 
 
-def split_reading(card) -> list:
-    """韓国語の「アンニョンハセヨ（こんにちは）」を 意味 と 読み に分ける。
+def split_reading(card, has_reading: bool) -> list:
+    """韓国語・中国語の「アンニョンハセヨ（こんにちは）」を 意味 と 読み に分ける。
 
     読みは答えそのものなので、テストで伏せているあいだは出さない。
-    英語の「クモ（虫）」のような かっこ は補足なので分けない（ハングルの語だけが対象）。
+    英語の「クモ（虫）」のような かっこ は補足なので分けない（has_reading の言語だけが対象）。
     """
     pic, word, ja = card
-    if not any("가" <= c <= "힣" for c in word):
+    if not has_reading:
         return [pic, word, ja]
     if ja.endswith("）") and "（" in ja:
         reading, meaning = ja[:-1].split("（", 1)
@@ -180,16 +185,29 @@ def split_reading(card) -> list:
     return [pic, word, ja, ja]
 
 
+# 場面のページ（飛行機・お店など）では、聞かれる側（偶数番目）を店員さんの声にして会話に聞こえるようにする
+STAFF_VOICE = "Reed (English (US))"
+
+
 def build(title: str, pages_src, hints: dict, notes: dict, name: str, labeled: frozenset = frozenset(),
-          voice: str = "Samantha", audio_prefix: str = "", pick_shows_word: bool = False) -> None:
-    """pick_shows_word: 選ぶ の選択肢に、その言語の語（ハングル）を添える。"""
+          voice: str = "Samantha", audio_prefix: str = "", pick_shows_word: bool = False,
+          has_reading: bool = False, dialog: frozenset = frozenset()) -> None:
+    """pick_shows_word: 選ぶ の選択肢に、その言語の語（ハングル・漢字）を添える。
+    has_reading: 日本語欄が「読み（意味）」の形の言語。dialog: 聞かれる→答える が交互に並ぶページ。"""
     AUDIO_DIR.mkdir(exist_ok=True)
     plain = lambda s: s.replace("{", "").replace("}", "")
-    speeches = {plain(x[1]): (x[3] if len(x) > 3 else plain(x[1])) for _, items in pages_src for x in items}
+    speeches = {}
+    for t, items in pages_src:
+        for k, x in enumerate(items):
+            staff = t in dialog and k % 2 == 0
+            speeches[plain(x[1])] = (x[3] if len(x) > 3 else plain(x[1]),
+                                     STAFF_VOICE if staff else voice,
+                                     ("staff_" if staff else "") + audio_prefix)
     unknown = set(notes) - set(speeches)
     assert not unknown, f"notes のキーがカードに無い: {unknown}"
-    audio = {w: audio_uri(w, s, voice, audio_prefix) for w, s in sorted(speeches.items())}
-    pages = [{"title": t, "words": [split_reading(x[:3]) for x in items], "labels": t in labeled} for t, items in pages_src]
+    audio = {w: audio_uri(w, s, v, p) for w, (s, v, p) in sorted(speeches.items())}
+    pages = [{"title": t, "words": [split_reading(x[:3], has_reading) for x in items], "labels": t in labeled}
+             for t, items in pages_src]
     data = (
         "const PAGES = " + json.dumps(pages, ensure_ascii=False) + ";\n"
         "const AUDIO = " + json.dumps(audio) + ";\n"
@@ -225,11 +243,15 @@ def build_pwa_shell() -> None:
 
 if __name__ == "__main__":
     from notes import PHRASE_NOTES, WORD_NOTES
-    from phrases import LABELED_PAGES, PHRASE_PAGES
+    from phrases import DIALOG_PAGES, LABELED_PAGES, PHRASE_PAGES
     from korean import KOREAN_LABELED_PAGES, KOREAN_NOTES, KOREAN_PAGES
+    from chinese import CHINESE_LABELED_PAGES, CHINESE_NOTES, CHINESE_PAGES
 
     build("英語カード", PAGES, WORD_HINTS, WORD_NOTES, "words")
-    build("英語で言おう", PHRASE_PAGES, PHRASE_HINTS, PHRASE_NOTES, "phrases", frozenset(LABELED_PAGES))
+    build("英語で言おう", PHRASE_PAGES, PHRASE_HINTS, PHRASE_NOTES, "phrases", frozenset(LABELED_PAGES),
+          dialog=frozenset(DIALOG_PAGES))
     build("韓国語", KOREAN_PAGES, KOREAN_HINTS, KOREAN_NOTES, "korean", frozenset(KOREAN_LABELED_PAGES),
-          voice="Yuna", audio_prefix="ko_", pick_shows_word=True)
+          voice="Yuna", audio_prefix="ko_", pick_shows_word=True, has_reading=True)
+    build("中国語", CHINESE_PAGES, CHINESE_HINTS, CHINESE_NOTES, "chinese", frozenset(CHINESE_LABELED_PAGES),
+          voice="Tingting", audio_prefix="zh_", pick_shows_word=True, has_reading=True)
     build_pwa_shell()
