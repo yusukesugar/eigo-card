@@ -134,6 +134,14 @@ PHRASE_HINTS = {
     "quiz": "？？？のところを入れて、文を全部言ってみよう",
     "pick": "文を聞いて、合っている絵を選んでね",
 }
+def lang_hints(lang: str) -> dict:
+    return {
+        "listen": f"カードを押すと、{lang}でしゃべるよ",
+        "quiz": f"{lang}で何て言う？ 言えたら「答え」を押してね",
+        "pick": "音を聞いて、合っている絵を選んでね",
+    }
+
+
 CHINESE_HINTS = {
     "listen": "カードを押すと、中国語でしゃべるよ",
     "quiz": "中国語で何て言う？ 言えたら「答え」を押してね",
@@ -254,4 +262,12 @@ if __name__ == "__main__":
           voice="Yuna", audio_prefix="ko_", pick_shows_word=True, has_reading=True)
     build("中国語", CHINESE_PAGES, CHINESE_HINTS, CHINESE_NOTES, "chinese", frozenset(CHINESE_LABELED_PAGES),
           voice="Tingting", audio_prefix="zh_", pick_shows_word=True, has_reading=True)
+
+    from thai import THAI_LABELED_PAGES, THAI_NOTES, THAI_PAGES
+    from vietnamese import VIETNAMESE_LABELED_PAGES, VIETNAMESE_NOTES, VIETNAMESE_PAGES
+
+    build("タイ語", THAI_PAGES, lang_hints("タイ語"), THAI_NOTES, "thai", frozenset(THAI_LABELED_PAGES),
+          voice="Kanya", audio_prefix="th_", pick_shows_word=True, has_reading=True)
+    build("ベトナム語", VIETNAMESE_PAGES, lang_hints("ベトナム語"), VIETNAMESE_NOTES, "vietnamese",
+          frozenset(VIETNAMESE_LABELED_PAGES), voice="Linh", audio_prefix="vi_", pick_shows_word=True, has_reading=True)
     build_pwa_shell()
