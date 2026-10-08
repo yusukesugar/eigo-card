@@ -1,0 +1,427 @@
+<title>リバーシとごもく</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<style>
+/* layout: one screen — game tabs, two player chips, the board as the hero, controls under the thumb */
+:root {
+  --bg: #e9eef2;
+  --fg: #1c2731;
+  --muted: #5d6b78;
+  --panel: #ffffff;
+  --line: #cfd8e0;
+  --accent: #2f66c9;
+  --accent-fg: #ffffff;
+  --glow: #ffd84d;
+  /* the boards are physical objects: same look in both themes */
+  --felt: #1d7a4c;
+  --felt-dark: #125836;
+  --felt-line: #0c3f26;
+  --wood: #e2b66e;
+  --wood-dark: #c99a50;
+  --wood-line: #5b3b14;
+  --stone-black: #1a1a1a;
+  --stone-white: #f7f7f2;
+  --font: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141a20; --fg: #e8eef3; --muted: #9aa8b5; --panel: #1f2730; --line: #34404c;
+    --accent: #6c9bf0; --accent-fg: #0d1520; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141a20; --fg: #e8eef3; --muted: #9aa8b5; --panel: #1f2730; --line: #34404c;
+  --accent: #6c9bf0; --accent-fg: #0d1520; color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font);
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.app {
+  max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 16px;
+  display: flex; flex-direction: column; gap: 12px; min-height: 100%; box-sizing: border-box;
+}
+button { font-family: inherit; color: inherit; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 4px; }
+.tab { border: 0; background: transparent; border-radius: 10px; padding: 10px 8px; font-size: 1.15rem; font-weight: 700; color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-fg); }
+
+.players { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.chip {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px;
+  background: var(--panel); border: 2px solid var(--line); transition: border-color .2s, box-shadow .2s;
+}
+.chip.turn { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+.chip .disc { width: 28px; height: 28px; border-radius: 50%; flex: none; }
+.chip .name { font-weight: 700; font-size: 1.1rem; }
+.chip .count { margin-left: auto; font-size: 1.6rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.chip .count:empty { display: none; }
+.chip .now { font-size: .85rem; color: var(--accent); font-weight: 700; visibility: hidden; }
+.chip.turn .now { visibility: visible; }
+
+.msg { text-align: center; font-size: 1.15rem; font-weight: 700; min-height: 1.6em; line-height: 1.5; text-wrap: balance; }
+
+.board-wrap { display: flex; justify-content: center; flex: 1; align-items: center; }
+.board {
+  width: min(100%, calc(100dvh - 300px), 640px); min-width: 260px; max-width: 100%;
+  aspect-ratio: 1; display: grid; box-sizing: border-box; border-radius: 12px; touch-action: manipulation;
+}
+
+/* stones */
+.disc.black, .stone.black { background: radial-gradient(circle at 35% 30%, #555 0%, var(--stone-black) 55%); box-shadow: 0 2px 3px rgba(0,0,0,.45); }
+.disc.white, .stone.white { background: radial-gradient(circle at 35% 30%, #fff 0%, var(--stone-white) 50%, #d8d8d0 100%); box-shadow: 0 2px 3px rgba(0,0,0,.35); }
+.chip .disc.white { border: 1px solid var(--line); }
+
+/* reversi */
+.board.reversi {
+  grid-template-columns: repeat(8, 1fr); background: var(--felt-line); gap: 2px; padding: 2px;
+  border: 10px solid #3b2a17; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+.reversi .cell { background: var(--felt); border: 0; padding: 0; position: relative; display: grid; place-items: center; cursor: pointer; }
+.reversi .cell:disabled { cursor: default; }
+.reversi .stone { width: 82%; height: 82%; border-radius: 50%; }
+.reversi .stone.flip { animation: flip .32s ease-out; }
+.reversi .stone.drop { animation: drop .18s ease-out; }
+@keyframes flip { 0% { transform: scaleX(1); } 50% { transform: scaleX(.05); } 100% { transform: scaleX(1); } }
+@keyframes drop { from { transform: scale(.6); } to { transform: scale(1); } }
+.reversi .hint::after {
+  content: ""; width: 34%; height: 34%; border-radius: 50%;
+  background: color-mix(in srgb, var(--glow) 70%, transparent); box-shadow: 0 0 10px 3px var(--glow);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .45; } }
+.reversi .last::before { content: ""; position: absolute; width: 14%; height: 14%; border-radius: 50%; background: #e2453a; z-index: 2; }
+.star { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--felt-line); transform: translate(-50%, -50%); z-index: 1; pointer-events: none; }
+.reversi .cell .star { top: 100%; left: 100%; transform: translate(-50%, -50%) translate(1px, 1px); }
+
+/* gomoku: stones sit on the intersections */
+.board.gomoku {
+  grid-template-columns: repeat(15, 1fr); padding: 2.2%;
+  background: linear-gradient(135deg, var(--wood) 0%, var(--wood-dark) 100%);
+  border: 6px solid #9c6f2e; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+.gomoku .cell { border: 0; padding: 0; background: transparent; position: relative; cursor: pointer; display: grid; place-items: center; }
+.gomoku .cell:disabled { cursor: default; }
+.gomoku .cell::before, .gomoku .cell::after { content: ""; position: absolute; background: var(--wood-line); pointer-events: none; }
+.gomoku .cell::before { height: 1px; top: 50%; left: 0; right: 0; }
+.gomoku .cell::after { width: 1px; left: 50%; top: 0; bottom: 0; }
+.gomoku .cell.l::before { left: 50%; } .gomoku .cell.r::before { right: 50%; }
+.gomoku .cell.t::after { top: 50%; } .gomoku .cell.b::after { bottom: 50%; }
+.gomoku .stone { width: 90%; height: 90%; border-radius: 50%; position: relative; z-index: 2; }
+.gomoku .stone.drop { animation: drop .15s ease-out; }
+.gomoku .dot { width: 22%; height: 22%; border-radius: 50%; background: var(--wood-line); z-index: 1; }
+.gomoku .last .stone::after { content: ""; position: absolute; inset: 36%; border-radius: 50%; background: #e2453a; }
+.gomoku .win .stone { box-shadow: 0 0 0 3px var(--glow), 0 0 12px 4px var(--glow); }
+.gomoku .reach { width: 62%; height: 62%; border-radius: 50%; z-index: 2; box-shadow: 0 0 8px 3px var(--glow); animation: pulse 1.6s ease-in-out infinite; }
+.gomoku .reach.black { border: 3px solid var(--stone-black); }
+.gomoku .reach.white { border: 3px solid var(--stone-white); }
+.gomoku .reach.both { border: 3px solid var(--stone-black); outline: 3px solid var(--stone-white); }
+
+.controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.btn {
+  border: 2px solid var(--line); background: var(--panel); border-radius: 14px; padding: 12px 6px;
+  font-size: 1.05rem; font-weight: 700; cursor: pointer; line-height: 1.3;
+}
+.btn:disabled { opacity: .4; cursor: default; }
+.btn.on { border-color: var(--glow); box-shadow: inset 0 0 0 2px var(--glow); }
+.btn .sub { display: block; font-size: .8rem; color: var(--muted); font-weight: 500; }
+.btn.armed { background: #e2453a; color: #fff; border-color: #e2453a; }
+.btn.armed .sub { color: #fff; }
+
+@media (max-width: 420px) {
+  .tab { font-size: 1rem; }
+  .chip .name { font-size: 1rem; }
+  .board.reversi { border-width: 6px; }
+  .btn { font-size: .95rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stone.flip, .stone.drop, .reversi .hint::after, .gomoku .reach { animation: none !important; }
+}
+</style>
+
+<div class="app">
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tab-reversi" role="tab" data-game="reversi">リバーシ</button>
+    <button class="tab" id="tab-gomoku" role="tab" data-game="gomoku">ごもくならべ</button>
+  </div>
+
+  <div class="players">
+    <div class="chip" id="chip-black"><span class="disc black"></span><span><span class="name">くろ</span><br><span class="now">いまの ばん</span></span><span class="count" id="count-black"></span></div>
+    <div class="chip" id="chip-white"><span class="disc white"></span><span><span class="name">しろ</span><br><span class="now">いまの ばん</span></span><span class="count" id="count-white"></span></div>
+  </div>
+
+  <div class="msg" id="msg" aria-live="polite"></div>
+
+  <div class="board-wrap"><div class="board" id="board"></div></div>
+
+  <div class="controls">
+    <button class="btn" id="btn-undo">まった<span class="sub">1つ もどす</span></button>
+    <button class="btn" id="btn-hint" aria-pressed="false">ひからせる<span class="sub" id="hint-sub">おけるところ</span></button>
+    <button class="btn" id="btn-reset">はじめから<span class="sub" id="reset-sub">あたらしく</span></button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const B = 1, W = 2;
+  const NAME = { 1: "くろ", 2: "しろ" };
+  const other = p => 3 - p;
+  const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+  const GN = 15;
+
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  // ---------- reversi ----------
+  function reversiNew() {
+    const b = Array.from({ length: 8 }, () => Array(8).fill(0));
+    b[3][3] = W; b[4][4] = W; b[3][4] = B; b[4][3] = B;
+    return { board: b, turn: B, last: null, history: [], note: "", over: false };
+  }
+  function flipsFor(b, r, c, p) {
+    if (b[r][c]) return [];
+    const out = [];
+    for (const [dr, dc] of DIRS) {
+      const line = [];
+      let y = r + dr, x = c + dc;
+      while (y >= 0 && y < 8 && x >= 0 && x < 8 && b[y][x] === other(p)) { line.push([y, x]); y += dr; x += dc; }
+      if (line.length && y >= 0 && y < 8 && x >= 0 && x < 8 && b[y][x] === p) out.push(...line);
+    }
+    return out;
+  }
+  function legalMoves(b, p) {
+    const m = [];
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (flipsFor(b, r, c, p).length) m.push([r, c]);
+    return m;
+  }
+  function countStones(b) {
+    let k = 0, w = 0;
+    for (const row of b) for (const v of row) { if (v === B) k++; else if (v === W) w++; }
+    return { k, w };
+  }
+  function reversiPlay(s, r, c) {
+    const flips = flipsFor(s.board, r, c, s.turn);
+    if (!flips.length) return null;
+    s.history.push({ board: s.board.map(x => x.slice()), turn: s.turn, last: s.last, note: s.note, over: s.over });
+    s.board[r][c] = s.turn;
+    for (const [y, x] of flips) s.board[y][x] = s.turn;
+    s.last = [r, c];
+    const nxt = other(s.turn);
+    if (legalMoves(s.board, nxt).length) { s.turn = nxt; s.note = ""; }
+    else if (legalMoves(s.board, s.turn).length) { s.note = `${NAME[nxt]}は おけるところが ないので、もういちど ${NAME[s.turn]}の ばん`; }
+    else { s.over = true; s.note = ""; }
+    return flips;
+  }
+
+  // ---------- gomoku ----------
+  function gomokuNew() {
+    return { board: Array.from({ length: GN }, () => Array(GN).fill(0)), turn: B, last: null, history: [], win: null, over: false };
+  }
+  function lineThrough(b, r, c, p) {
+    for (const [dr, dc] of [[0,1],[1,0],[1,1],[1,-1]]) {
+      const cells = [[r, c]];
+      for (const s of [1, -1]) {
+        let y = r + dr * s, x = c + dc * s;
+        while (y >= 0 && y < GN && x >= 0 && x < GN && b[y][x] === p) { cells.push([y, x]); y += dr * s; x += dc * s; }
+      }
+      if (cells.length >= 5) return cells;
+    }
+    return null;
+  }
+  function gomokuPlay(s, r, c) {
+    if (s.board[r][c] || s.over) return false;
+    s.history.push({ board: s.board.map(x => x.slice()), turn: s.turn, last: s.last, win: s.win, over: s.over });
+    s.board[r][c] = s.turn;
+    s.last = [r, c];
+    const line = lineThrough(s.board, r, c, s.turn);
+    if (line) { s.win = { p: s.turn, cells: line }; s.over = true; return true; }
+    if (s.board.every(row => row.every(v => v))) { s.over = true; return true; }
+    s.turn = other(s.turn);
+    return true;
+  }
+  // empty points where one more stone makes five, for either side
+  function reachPoints(b) {
+    const out = {};
+    for (let r = 0; r < GN; r++) for (let c = 0; c < GN; c++) {
+      if (b[r][c]) continue;
+      let mask = 0;
+      for (const p of [B, W]) { b[r][c] = p; if (lineThrough(b, r, c, p)) mask |= p; b[r][c] = 0; }
+      if (mask) out[r * GN + c] = mask;
+    }
+    return out;
+  }
+
+  // ---------- state ----------
+  let state;
+  const el = id => document.getElementById(id);
+  const boardEl = el("board");
+  let armTimer = null;
+
+  function save() { store.set("rg-state", state); }
+
+  function render(anim = {}) {
+    const g = state.game;
+    for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", String(t.dataset.game === g));
+    const hintBtn = el("btn-hint");
+    hintBtn.classList.toggle("on", state.hint);
+    hintBtn.setAttribute("aria-pressed", String(state.hint));
+    el("hint-sub").textContent = g === "reversi" ? "おけるところ" : "あと1つで5つ";
+    if (g === "reversi") renderReversi(anim); else renderGomoku(anim);
+  }
+
+  function setTurnChips(turn, over) {
+    el("chip-black").classList.toggle("turn", !over && turn === B);
+    el("chip-white").classList.toggle("turn", !over && turn === W);
+  }
+
+  function renderReversi(anim) {
+    const s = state.reversi;
+    const { k, w } = countStones(s.board);
+    el("count-black").textContent = k;
+    el("count-white").textContent = w;
+    setTurnChips(s.turn, s.over);
+    el("msg").textContent = s.over ? `おしまい。くろ ${k}こ・しろ ${w}こ` : (s.note || `${NAME[s.turn]}の ばん`);
+    el("btn-undo").disabled = !s.history.length;
+
+    const hints = new Set(state.hint && !s.over ? legalMoves(s.board, s.turn).map(([r, c]) => r * 8 + c) : []);
+    const flipped = new Set((anim.flips || []).map(([r, c]) => r * 8 + c));
+    boardEl.className = "board reversi";
+    boardEl.style.gridTemplateColumns = "";
+    const frag = document.createDocumentFragment();
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const v = s.board[r][c], i = r * 8 + c;
+      const b = document.createElement("button");
+      b.className = "cell";
+      b.setAttribute("aria-label", `${r + 1}ぎょう ${c + 1}れつ ${v ? NAME[v] : "あき"}`);
+      if (v) {
+        const st = document.createElement("span");
+        st.className = "stone " + (v === B ? "black" : "white");
+        if (flipped.has(i)) st.classList.add("flip");
+        if (anim.at === i) st.classList.add("drop");
+        b.appendChild(st);
+        b.disabled = true;
+      } else if (hints.has(i)) b.classList.add("hint");
+      if (s.last && s.last[0] === r && s.last[1] === c) b.classList.add("last");
+      if ((r === 1 || r === 5) && (c === 1 || c === 5)) {
+        const d = document.createElement("span"); d.className = "star"; b.appendChild(d);
+      }
+      if (s.over) b.disabled = true;
+      b.dataset.r = r; b.dataset.c = c;
+      frag.appendChild(b);
+    }
+    boardEl.replaceChildren(frag);
+  }
+
+  function renderGomoku(anim) {
+    const s = state.gomoku;
+    el("count-black").textContent = "";
+    el("count-white").textContent = "";
+    setTurnChips(s.turn, s.over);
+    el("msg").textContent = s.win ? `${NAME[s.win.p]}が 5つ ならんだ！` : s.over ? "ばんが いっぱいに なった" : `${NAME[s.turn]}の ばん`;
+    el("btn-undo").disabled = !s.history.length;
+
+    const reach = state.hint && !s.over ? reachPoints(s.board) : {};
+    const winSet = new Set(s.win ? s.win.cells.map(([r, c]) => r * GN + c) : []);
+    const stars = new Set([[3,3],[3,11],[7,7],[11,3],[11,11]].map(([r, c]) => r * GN + c));
+    boardEl.className = "board gomoku";
+    const frag = document.createDocumentFragment();
+    for (let r = 0; r < GN; r++) for (let c = 0; c < GN; c++) {
+      const v = s.board[r][c], i = r * GN + c;
+      const b = document.createElement("button");
+      let cls = "cell";
+      if (c === 0) cls += " l"; if (c === GN - 1) cls += " r";
+      if (r === 0) cls += " t"; if (r === GN - 1) cls += " b";
+      b.className = cls;
+      b.setAttribute("aria-label", `${r + 1}ぎょう ${c + 1}れつ ${v ? NAME[v] : "あき"}`);
+      if (v) {
+        const st = document.createElement("span");
+        st.className = "stone " + (v === B ? "black" : "white");
+        if (anim.at === i) st.classList.add("drop");
+        b.appendChild(st);
+        b.disabled = true;
+      } else if (reach[i]) {
+        const m = document.createElement("span");
+        m.className = "reach " + (reach[i] === 3 ? "both" : reach[i] === B ? "black" : "white");
+        b.appendChild(m);
+      } else if (stars.has(i)) {
+        const d = document.createElement("span"); d.className = "dot"; b.appendChild(d);
+      }
+      if (s.last && s.last[0] === r && s.last[1] === c) b.classList.add("last");
+      if (winSet.has(i)) b.classList.add("win");
+      if (s.over) b.disabled = true;
+      b.dataset.r = r; b.dataset.c = c;
+      frag.appendChild(b);
+    }
+    boardEl.replaceChildren(frag);
+  }
+
+  // ---------- input ----------
+  boardEl.addEventListener("click", e => {
+    const cell = e.target.closest(".cell");
+    if (!cell || cell.disabled) return;
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    disarm();
+    if (state.game === "reversi") {
+      const flips = reversiPlay(state.reversi, r, c);
+      if (!flips) return;
+      save(); render({ flips, at: r * 8 + c });
+    } else {
+      if (!gomokuPlay(state.gomoku, r, c)) return;
+      save(); render({ at: r * GN + c });
+    }
+  });
+
+  for (const t of document.querySelectorAll(".tab")) {
+    t.addEventListener("click", () => { disarm(); state.game = t.dataset.game; save(); render(); });
+  }
+
+  el("btn-undo").addEventListener("click", () => {
+    disarm();
+    const s = state[state.game];
+    const prev = s.history.pop();
+    if (!prev) return;
+    Object.assign(s, prev);
+    save(); render();
+  });
+
+  el("btn-hint").addEventListener("click", () => { state.hint = !state.hint; save(); render(); });
+
+  // reset needs a second tap within 3s, so a stray touch doesn't wipe the game
+  const resetBtn = el("btn-reset");
+  function disarm() {
+    clearTimeout(armTimer); armTimer = null;
+    resetBtn.classList.remove("armed");
+    el("reset-sub").textContent = "あたらしく";
+  }
+  resetBtn.addEventListener("click", () => {
+    if (!armTimer) {
+      resetBtn.classList.add("armed");
+      el("reset-sub").textContent = "もういちど おす";
+      armTimer = setTimeout(disarm, 3000);
+      return;
+    }
+    disarm();
+    state[state.game] = state.game === "reversi" ? reversiNew() : gomokuNew();
+    save(); render();
+  });
+
+  // ---------- boot ----------
+  function valid(s) {
+    return s && (s.game === "reversi" || s.game === "gomoku") && s.reversi?.board?.length === 8 && s.gomoku?.board?.length === GN;
+  }
+  function start(data) {
+    const saved = data && data.state;
+    state = valid(saved) ? saved : valid(store.get("rg-state")) ? store.get("rg-state")
+      : { game: "reversi", hint: true, reversi: reversiNew(), gomoku: gomokuNew() };
+    render();
+  }
+  window.claude?.hot?.snapshot?.(() => ({ state }));
+  window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>

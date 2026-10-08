@@ -236,6 +236,23 @@ def build(title: str, pages_src, hints: dict, notes: dict, name: str, labeled: f
           f"audio={len(audio)} size={out.stat().st_size}")
 
 
+# リバーシとごもく。boardgame.html は Artifact と同じ素の中身。Pages 版にだけ 戻るボタンと PWA の頭を付ける
+GAME_HOME = """<style>
+  html { background: var(--bg); }
+  .home { align-self: flex-start; padding: 6px 14px; border-radius: 999px; background: var(--accent);
+          color: var(--accent-fg); font-weight: 700; text-decoration: none; }
+</style>
+"""
+
+
+def build_boardgame() -> None:
+    src = (HERE / "boardgame.html").read_text()
+    assert src.count('<div class="app">\n') == 1
+    body = src.replace('<div class="app">\n', '<div class="app">\n  ' + PWA_HOME + "\n")
+    (DOCS_DIR / "boardgame.html").write_text(PWA_HEAD + GAME_HOME + body + PWA_TAIL)
+    print(f"boardgame: size={(DOCS_DIR / 'boardgame.html').stat().st_size}")
+
+
 def build_pwa_shell() -> None:
     """ホーム画面・アイコン・manifest を docs/ に写し、sw.js に中身から作った版番号を入れる。"""
     for f in ["index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"]:
@@ -270,4 +287,5 @@ if __name__ == "__main__":
           voice="Kanya", audio_prefix="th_", pick_shows_word=True, has_reading=True)
     build("ベトナム語", VIETNAMESE_PAGES, lang_hints("ベトナム語"), VIETNAMESE_NOTES, "vietnamese",
           frozenset(VIETNAMESE_LABELED_PAGES), voice="Linh", audio_prefix="vi_", pick_shows_word=True, has_reading=True)
+    build_boardgame()
     build_pwa_shell()
