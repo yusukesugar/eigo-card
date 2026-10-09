@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="えいご">
+<meta name="apple-mobile-web-app-title" content="せかいのことば">
 <meta name="theme-color" content="#2f7fd6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>えいご</title>
+<title>せかいのことば</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
   :root {
@@ -57,6 +57,28 @@
   h1 { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   [hidden] { display: none !important; }
 
+  /* 世界地図と話す人の数。言葉ごとの色は アプリのボタンの左の線と同じ */
+  .en { --lang: #f76707; } .zh { --lang: #e03131; } .ko { --lang: #7950f2; }
+  .th { --lang: #2f9e44; } .vi { --lang: #e0a800; } .ja { --lang: #1c2b40; }
+  .map, .speakers { background: var(--white); color: var(--ink); border-radius: 24px; padding: 12px; display: grid; gap: 8px; }
+  .world { width: 100%; height: auto; display: block; }
+  .world .sea { fill: #d7ecff; }
+  .world .land { fill: #fff6cf; stroke: #d9c27a; stroke-width: .5; }
+  .world path.en, .world path.zh, .world path.ko, .world path.th, .world path.vi { fill: var(--lang); stroke: #fff; stroke-width: .5; }
+  .world a:focus-visible path { stroke: var(--ink); stroke-width: 3; }
+  .world path.ja { fill: var(--lang); }
+  .map-sub { margin: 4px 0 0; font-size: 14px; font-weight: 800; }
+  .map-note { margin: 0; font-size: 13px; color: #5a6b82; }
+  .speakers h2 { margin: 0; font-size: 18px; }
+  .bars { display: grid; grid-template-columns: auto 1fr; gap: 8px 10px; align-items: center; }
+  .bars .who { font-weight: 800; font-size: 15px; white-space: nowrap; }
+  .bars .bar { display: block; position: relative; height: 26px; }
+  .bars .fill { display: block; height: 100%; min-width: 4px; border-radius: 6px; background: var(--lang); }
+  .bars .num { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 800; white-space: nowrap; }
+  .bars .fill.wide + .num { color: var(--white); }
+  .bars .fill:not(.wide) + .num { left: calc(var(--w) + 8px); }
+  .app.en, .app.zh, .app.ko, .app.th, .app.vi { border-left: 12px solid var(--lang); }
+
   /* おやの きろく。タイトル長押しで出る */
   .log { background: var(--white); color: var(--ink); border-radius: 20px; padding: 16px; display: grid; gap: 12px; }
   .log-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
@@ -77,37 +99,44 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>えいご</h1>
+  <h1>せかいのことば</h1>
+
+  <section class="map" aria-label="どこで話されているか">
+    <!--MAP-->
+    <p class="map-note">色の国を押すと、その言葉のカードが開くよ。⭐ が日本。地図は 国の広さが 正しく くらべられる かき方。</p>
+  </section>
   <div class="apps">
-    <a class="app" href="words.html">
+    <a class="app en" href="words.html">
       <span class="pic">🐱</span>
       <span><span class="name">英語カード</span><br><span class="sub">cat, dog, apple ...</span></span>
     </a>
-    <a class="app" href="phrases.html">
+    <a class="app en" href="phrases.html">
       <span class="pic">💬</span>
       <span><span class="name">英語で言おう</span><br><span class="sub">I like cats.</span></span>
     </a>
-    <a class="app" href="korean.html">
+    <a class="app ko" href="korean.html">
       <span class="pic">🇰🇷</span>
       <span><span class="name">韓国語</span><br><span class="sub">안녕하세요</span></span>
     </a>
-    <a class="app" href="chinese.html">
+    <a class="app zh" href="chinese.html">
       <span class="pic">🇨🇳</span>
       <span><span class="name">中国語</span><br><span class="sub">你好 nǐ hǎo</span></span>
     </a>
-    <a class="app" href="thai.html">
+    <a class="app th" href="thai.html">
       <span class="pic">🇹🇭</span>
       <span><span class="name">タイ語</span><br><span class="sub">สวัสดี サワッディー</span></span>
     </a>
-    <a class="app" href="vietnamese.html">
+    <a class="app vi" href="vietnamese.html">
       <span class="pic">🇻🇳</span>
       <span><span class="name">ベトナム語</span><br><span class="sub">Xin chào</span></span>
     </a>
-    <a class="app" href="boardgame.html">
-      <span class="pic">⚫</span>
-      <span><span class="name">リバーシとごもく</span><br><span class="sub">2人で あそぶ</span></span>
-    </a>
   </div>
+
+  <section class="speakers" aria-label="話す人の数">
+    <h2>話す人の数</h2>
+    <!--SPEAKERS-->
+    <p class="map-note">その言葉で 生まれ育った人と、あとから 覚えた人を 合わせた数。Ethnologue（2026年）より。</p>
+  </section>
   <p class="status" id="status"></p>
 
   <section class="log" id="log" hidden aria-label="つかったきろく">

@@ -160,7 +160,7 @@ PWA_HEAD = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="えいご">
+<meta name="apple-mobile-web-app-title" content="せかいのことば">
 <meta name="theme-color" content="#2f7fd6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -236,31 +236,79 @@ def build(title: str, pages_src, hints: dict, notes: dict, name: str, labeled: f
           f"audio={len(audio)} size={out.stat().st_size}")
 
 
-# リバーシとごもく。boardgame.html は Artifact と同じ素の中身。Pages 版にだけ 戻るボタンと PWA の頭を付ける
-GAME_HOME = """<style>
-  html { background: var(--bg); }
-  .home { align-self: flex-start; padding: 6px 14px; border-radius: 999px; background: var(--accent);
-          color: var(--accent-fg); font-weight: 700; text-decoration: none; }
-</style>
-"""
+# リバーシとごもく。ことばとは別のアプリとして docs/games/ に置き、iPad のホーム画面にも別のアイコンで入れる。
+# boardgame.html は Artifact と同じ素の中身。Pages 版にだけ PWA の頭を付ける。
+# Service Worker は ことば と共有（../sw.js の範囲に games/ も入る）
+GAMES_DIR = DOCS_DIR / "games"
 
 
 def build_boardgame() -> None:
-    src = (HERE / "boardgame.html").read_text()
-    assert src.count('<div class="app">\n') == 1
-    body = src.replace('<div class="app">\n', '<div class="app">\n  ' + PWA_HOME + "\n")
-    (DOCS_DIR / "boardgame.html").write_text(PWA_HEAD + GAME_HOME + body + PWA_TAIL)
-    print(f"boardgame: size={(DOCS_DIR / 'boardgame.html').stat().st_size}")
+    head = (PWA_HEAD.replace('content="せかいのことば"', 'content="リバーシ"')
+            .replace("html { background: #2f7fd6;", "html { background: var(--bg);")
+            .replace("#2f7fd6", "#1d7a4c"))
+    tail = PWA_TAIL.replace('register("sw.js")', 'register("../sw.js", { scope: "../" })')
+    assert head != PWA_HEAD and tail != PWA_TAIL
+    GAMES_DIR.mkdir(exist_ok=True)
+    (GAMES_DIR / "index.html").write_text(head + (HERE / "boardgame.html").read_text() + tail)
+    for f in ["manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"]:
+        shutil.copyfile(PWA_DIR / "games" / f, GAMES_DIR / f)
+    print(f"games: size={(GAMES_DIR / 'index.html').stat().st_size}")
+
+
+# ホームの地図と棒グラフ。話す人の数は Ethnologue 2026（母語＋第二言語、百万人）。
+# Wikipedia「List of languages by total number of speakers」の表から 2026-10-09 に写した
+LANGS = [  # (クラス, 名前, 押したときの行き先, 話す人（百万人）, 地図で塗る国 ISO 3166 数字コード)
+    ("en", "英語", "words.html", 1493, ["840", "826", "124", "036", "554", "372"]),
+    ("zh", "中国語", "chinese.html", 1183, ["156", "158"]),
+    ("ja", "日本語", None, 126, ["392"]),
+    ("vi", "ベトナム語", "vietnamese.html", 97, ["704"]),
+    ("ko", "韓国語", "korean.html", 82, ["410", "408"]),
+    ("th", "タイ語", "thai.html", 71, ["764"]),
+]
+
+
+def people(m: int) -> str:
+    """百万人 → 「約15億人」「約9700万人」。"""
+    if m >= 1000:
+        return f"約{round(m / 100)}億人"
+    if m >= 100:
+        oku, man = divmod(m, 100)
+        return f"約{oku}億{man * 100}万人" if man else f"約{oku}億人"
+    return f"約{m * 100}万人"
+
+
+def build_home() -> None:
+    from map_svg import project, world_svg, X_EDGE, Y_EDGE
+    groups = {code: {"cls": cls, "href": href, "label": name}
+              for cls, name, href, _, codes in LANGS for code in codes}
+    x, y = project(138 - 150, 36)  # 日本に ⭐（中心経度 150° からの差で入れる）
+    star = lambda size: (f'<text class="star" x="{x + X_EDGE:.1f}" y="{y + Y_EDGE:.1f}" font-size="{size}" '
+                         f'text-anchor="middle" dominant-baseline="central">⭐</text></svg>')
+    # 韓国・台湾・タイ・ベトナムは世界全体だと小さくて押せないので、アジアを大きくした地図も並べる
+    svg = (world_svg(groups).replace("</svg>", star(22))
+           + '<p class="map-sub">アジアを 大きくすると</p>'
+           + world_svg(groups, box=(94, 147, 6, 44), uid="asia", label="アジアの地図").replace("</svg>", star(8)))
+    top = max(m for *_, m, _ in LANGS)
+    bars = "".join(
+        f'<span class="who">{name}</span><span class="bar {cls}" style="--w:{100 * m / top:.1f}%">'
+        f'<span class="fill{" wide" if m / top > 0.5 else ""}" style="width:var(--w)"></span>'
+        f'<span class="num">{people(m)}</span></span>'
+        for cls, name, _, m, _ in LANGS)
+    html = (PWA_DIR / "index.html").read_text()
+    assert html.count("<!--MAP-->") == 1 and html.count("<!--SPEAKERS-->") == 1
+    html = html.replace("<!--MAP-->", svg).replace("<!--SPEAKERS-->", f'<div class="bars">{bars}</div>')
+    (DOCS_DIR / "index.html").write_text(html)
 
 
 def build_pwa_shell() -> None:
     """ホーム画面・アイコン・manifest を docs/ に写し、sw.js に中身から作った版番号を入れる。"""
-    for f in ["index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"]:
+    build_home()
+    for f in ["manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"]:
         shutil.copyfile(PWA_DIR / f, DOCS_DIR / f)
     h = hashlib.sha256()
-    for f in sorted(DOCS_DIR.iterdir()):
-        if f.name != "sw.js":
-            h.update(f.name.encode() + f.read_bytes())
+    for f in sorted(DOCS_DIR.rglob("*")):
+        if f.is_file() and f.name != "sw.js":
+            h.update(str(f.relative_to(DOCS_DIR)).encode() + f.read_bytes())
     sw = (PWA_DIR / "sw.js").read_text().replace("{{VERSION}}", "eigo-" + h.hexdigest()[:12])
     (DOCS_DIR / "sw.js").write_text(sw)
     (DOCS_DIR / ".nojekyll").touch()

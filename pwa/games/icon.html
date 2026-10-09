@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- リバーシとごもく のアイコンの元。build では使わない。作り直すときは README の手順で PNG にする -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; width: 512px; height: 512px; background: #1d7a4c; overflow: hidden; }
+  .board { position: absolute; inset: 56px; border-radius: 40px; background: #1d7a4c;
+           border: 14px solid #e2b66e; box-sizing: border-box;
+           background-image: linear-gradient(#0c3f26 4px, transparent 4px), linear-gradient(90deg, #0c3f26 4px, transparent 4px);
+           background-size: 100px 100px; background-position: -2px -2px; }
+  .s { position: absolute; width: 150px; height: 150px; border-radius: 50%; box-shadow: 0 10px 0 rgba(0,0,0,.35); }
+  .b { background: radial-gradient(circle at 35% 30%, #555, #111 60%); }
+  .w { background: radial-gradient(circle at 35% 30%, #fff, #d9d9d9 70%); }
+</style>
+</head>
+<body><div class="board"></div>
+<div class="s w" style="left:106px;top:106px"></div><div class="s b" style="left:256px;top:106px"></div>
+<div class="s b" style="left:106px;top:256px"></div><div class="s w" style="left:256px;top:256px"></div>
+</body>
+</html>

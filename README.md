@@ -1,13 +1,15 @@
-# えいご
+# せかいのことば
 
-子ども向けの英語アプリ。オフラインで動く Web アプリ（PWA）として GitHub Pages に置く。
+子ども向けの ことばのアプリ（英語・韓国語・中国語・タイ語・ベトナム語）。オフラインで動く Web アプリ（PWA）として GitHub Pages に置く。
 
 - **えいごカード**（`words.html`）: 絵を押すと英単語をしゃべる。15ページ・182語
 - **えいごでいおう**（`phrases.html`）: 「I like ___.」のような文の枠に、絵を押して語を入れかえる。10ページ・120文
 
 どちらも きく／テスト／えらぶ の3モード。
 
-- **リバーシとごもく**（`boardgame.html`）: 親子2人で遊ぶ盤ゲーム。元は `boardgame.html`、ビルドで Pages 用に「戻る」と PWA の頭を付ける
+- ホームの世界地図は `map_svg.py` が `map/countries-110m.json`（world-atlas）から作る。話す人の数は `build.py` の `LANGS`
+
+別のアプリとして **リバーシとごもく**（`docs/games/`）も同じ Pages に置く。元は `boardgame.html`、アイコンは `pwa/games/`。iPad のホーム画面には別のアイコンで入る。
 
 ## ビルド
 

@@ -1,6 +1,6 @@
 {
-  "name": "えいご",
-  "short_name": "えいご",
+  "name": "せかいのことば",
+  "short_name": "せかいのことば",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
