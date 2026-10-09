@@ -22,6 +22,18 @@ WORD_NOTES = {
 }
 
 PHRASE_NOTES = {
+    "Let it go.": "『アナと雪の女王』の歌。日本語版の題は「ありのままで」。let it go は「手をはなす・もう気にしない」という意味で、ふだんの会話でも使うよ。",
+    "Do you want to build a snowman?": "『アナと雪の女王』の歌。日本語版の題は「雪だるまつくろう」。Do you want to 〜? は「〜しない？」とさそう言い方だよ。",
+    "Into the unknown": "『アナと雪の女王2』の歌。unknown は「知られていない」。the unknown で「知らない世界」になるよ。",
+    "A whole new world": "『アラジン』の歌。whole は「まるごと・ぜんぶ」。a whole new world で「何もかも新しい世界」。",
+    "Under the sea": "『リトル・マーメイド』の歌。under は「〜の下」。海の下、つまり 海の中 のことだよ。",
+    "You've got a friend in me.": "『トイ・ストーリー』の歌。日本語版の題は「君はともだち」。直訳すると「君は ぼくの中に 友だちを持っている」。英語らしい言い方だね。",
+    "When you wish upon a star": "『ピノキオ』の歌。日本語版の題は「星に願いを」。wish は「願う」。",
+    "How far I'll go": "『モアナと伝説の海』の歌。how far は「どこまで遠く」。I'll go は「私は行く」。",
+    "Remember me.": "『リメンバー・ミー』の歌。映画の題名も この歌の名前から来ているよ。",
+    "Beauty and the Beast": "『美女と野獣』の歌。beauty は「美しさ・美しい人」、beast は「けもの」。",
+    "We don't talk about Bruno.": "『ミラベルと魔法だらけの家』の歌。日本語版の題は「秘密のブルーノ」。don't talk about 〜 で「〜の話はしない」。",
+    "Someday my prince will come.": "『白雪姫』の歌。日本語版の題は「いつか王子様が」。someday は「いつか」。",
     "Let's eat!": "英語には「いただきます」とぴったり同じ言葉はないんだ。食べ始めるときは「Let's eat!（食べよう！）」と言うことが多いよ。作ってくれた人には「Thank you!」。",
     "Hello!": "Hello は朝でも昼でも夜でも使えるよ。「こんにちは」より広い言葉。",
     "Good night.": "寝るときの「おやすみ」と、夜に別れるときに使うよ。夜に会ったときの「こんばんは」は Good evening.",
