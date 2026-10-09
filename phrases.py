@@ -1,7 +1,7 @@
 """えいごでいおう の文。{} で囲んだところが、絵で入れかわる語。"""
 
 # 絵だけでは意味が決まらないページ。カードに日本語を小さく添える
-LABELED_PAGES = {"あいさつ", "アニメでよく聞く", "ディズニーの歌", "体の動き", "物を動かす",
+LABELED_PAGES = {"あいさつ", "アニメでよく聞く", "ディズニーの歌", "歌の形で言おう", "体の動き", "物を動かす",
                  "場面 飛行機", "場面 ハンバーガー屋", "場面 タクシー・お店"}
 
 # 場面のページ。聞かれる（店員さんの声）→ 答える が交互に並ぶ
@@ -32,6 +32,20 @@ PHRASE_PAGES = [
         ("🌟", "When you wish upon a star", "星に願いをかけるとき"), ("🌊", "How far I'll go", "どこまで行けるかな"),
         ("🎸", "Remember me.", "私をおぼえていて"), ("🌹", "Beauty and the Beast", "美女と野獣"),
         ("🤫", "We don't talk about Bruno.", "ブルーノの話はしないの"), ("🏰", "Someday my prince will come.", "いつか王子様が来る"),
+    ]),
+    # 上の曲名と同じ形で、ふだん使う文にしたもの。{} が 曲名から入れかえたところ
+    ("歌の形で言おう", [
+        ("⚽", "Do you want to {play soccer}?", "サッカーしない？"),
+        ("🎈", "Let {the balloon} go.", "風船を はなして"),
+        ("🌲", "Let's go into {the forest}.", "森の中に 入ろう"),
+        ("🍕", "A whole {pizza}!", "ピザ まるごと！"),
+        ("🛏️", "It's under {the bed}.", "ベッドの下に あるよ"),
+        ("🧸", "I've got {a new friend}.", "新しい友だちが できたよ"),
+        ("🦅", "I wish I could {fly}.", "飛べたら いいのに"),
+        ("🚉", "How far is {the station}?", "駅まで どのくらい？"),
+        ("📝", "Remember {your homework}.", "宿題を わすれないでね"),
+        ("📚", "We don't talk {in the library}.", "図書館では しゃべらないよ"),
+        ("🚀", "Someday I will {go to space}.", "いつか 宇宙に行く"),
     ]),
     ("好き I like", [
         ("🍎", "I like {apples}.", "りんごが好き"), ("🍌", "I like {bananas}.", "バナナが好き"),

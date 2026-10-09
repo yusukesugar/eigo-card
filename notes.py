@@ -22,6 +22,17 @@ WORD_NOTES = {
 }
 
 PHRASE_NOTES = {
+    "Do you want to play soccer?": "Do you want to build a snowman?（雪だるまつくろう）と同じ形。Do you want to 〜? で「〜しない？」とさそえるよ。",
+    "Let the balloon go.": "Let it go.（ありのままで）と同じ形。it のところに はなすものを入れると「〜を はなして」。",
+    "Let's go into the forest.": "Into the unknown（知らない世界へ）の into。into は「〜の中へ」入っていく動きだよ。",
+    "A whole pizza!": "A whole new world（ホール・ニュー・ワールド）の whole。「まるごと・ぜんぶ」の意味だよ。",
+    "It's under the bed.": "Under the sea（アンダー・ザ・シー）の under。「〜の下」だよ。",
+    "I've got a new friend.": "You've got a friend in me.（君はともだち）の got。I've got 〜 で「〜を持っている・〜ができた」。",
+    "I wish I could fly.": "When you wish upon a star（星に願いを）の wish。I wish I could 〜 で「〜できたらいいのに」。",
+    "How far is the station?": "How far I'll go（どこまでも）の how far。「どのくらい遠い？」と聞けるよ。",
+    "Remember your homework.": "Remember me.（リメンバー・ミー）と同じ形。remember は「おぼえている・わすれない」。",
+    "We don't talk in the library.": "We don't talk about Bruno.（秘密のブルーノ）と同じ形。We don't 〜 で「わたしたちは 〜しない」。",
+    "Someday I will go to space.": "Someday my prince will come.（いつか王子様が）の someday。「いつか」だよ。",
     "Let it go.": "『アナと雪の女王』の歌。日本語版の題は「ありのままで」。let it go は「手をはなす・もう気にしない」という意味で、ふだんの会話でも使うよ。",
     "Do you want to build a snowman?": "『アナと雪の女王』の歌。日本語版の題は「雪だるまつくろう」。Do you want to 〜? は「〜しない？」とさそう言い方だよ。",
     "Into the unknown": "『アナと雪の女王2』の歌。unknown は「知られていない」。the unknown で「知らない世界」になるよ。",
