@@ -1,6 +1,9 @@
 # せかいのことば
 
-子ども向けの ことばのアプリ（英語・韓国語・中国語・タイ語・ベトナム語）。オフラインで動く Web アプリ（PWA）として GitHub Pages に置く。
+子ども向けの ことばのアプリ（英語・韓国語・中国語・タイ語・ベトナム語）。
+
+- せかいのことば: https://yusukesugar.github.io/eigo-card/
+- リバーシとごもく: https://yusukesugar.github.io/eigo-card/games/オフラインで動く Web アプリ（PWA）として GitHub Pages に置く。
 
 - **えいごカード**（`words.html`）: 絵を押すと英単語をしゃべる。15ページ・182語
 - **えいごでいおう**（`phrases.html`）: 「I like ___.」のような文の枠に、絵を押して語を入れかえる。10ページ・120文
