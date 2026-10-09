@@ -700,15 +700,20 @@
       $("reportDone").hidden = false;
       setTimeout(() => $("report").close(), 1800);
     };
-    // iPad の共有メニューで、娘が自分でメッセージや LINE を選んでお父さんに送る。
-    // あて先はコードに書かない（公開リポジトリなので）
-    if (navigator.share) {
-      const body = [
-        "📮 せかいのことばから",
-        `【${r.kind || "お知らせ"}】${r.text}`,
-        `場所：${r.appTitle} / ${r.page} / ${r.card}（${MODE_NAMES[r.mode]}）`,
-        r.at,
-      ].join("\n");
+    // これまでのお知らせを ぜんぶ 本文に入れて送る。
+    // 送り先は お父さんが ホーム画面の親の記録で入れたもの（localStorage）。公開リポジトリなのでコードには書かない
+    let all = [r], to = "";
+    try {
+      all = JSON.parse(localStorage.getItem("eigo-reports") || "[]");
+      to = (localStorage.getItem("eigo-dad-to") || "").replace(/[^0-9+@._a-zA-Z-]/g, "");
+    } catch (e) {}
+    const body = [`📮 せかいのことばから（ぜんぶで ${all.length}件）`, ...all.map((x) =>
+      `${x.at}【${x.kind || "お知らせ"}】${x.text || ""}\n　${x.appTitle} / ${x.page} / ${x.card}（${MODE_NAMES[x.mode] || x.mode}）`)].join("\n");
+    if (to) {
+      // メッセージが 宛先と本文の入った状態で開く。娘は ↑ を押すだけ
+      location.href = `sms:${to}&body=${encodeURIComponent(body)}`;
+      done("メッセージが ひらくよ。↑ を おして 送ってね");
+    } else if (navigator.share) {
       navigator.share({ text: body })
         .then(() => done("送れたよ！ ありがとう！"))
         .catch(() => done("送らなかったけど、iPad には残したよ。"));

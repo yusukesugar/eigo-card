@@ -95,6 +95,7 @@
   .reports { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; font-size: 14px; }
   .reports .meta { color: #5a6b82; font-size: 12px; font-variant-numeric: tabular-nums; }
   .reports .kind { font-weight: 800; }
+  .dad-to { font: 500 16px var(--ja); padding: 10px 12px; border: 2px solid #c9d6e4; border-radius: 12px; width: 100%; box-sizing: border-box; }
 </style>
 </head>
 <body>
@@ -153,6 +154,13 @@
     </div>
     <p class="log-note" id="reportsNote">アプリの「📮 お父さんに知らせる」から届いたもの。コピーして Claude に貼れば直せます。</p>
     <ol class="reports" id="reportsBody"></ol>
+
+    <div class="log-head">
+      <h2>お知らせの送り先</h2>
+      <button class="log-close" id="dadToSave" type="button">保存</button>
+    </div>
+    <p class="log-note" id="dadToNote">お父さんの電話番号か、iMessage のメールアドレス。入れておくと、娘が「知らせる」を押したとき メッセージが 宛先と ぜんぶの内容が入った状態で開きます。この iPad の中にだけ保存します。</p>
+    <input class="dad-to" id="dadTo" type="text" inputmode="email" autocomplete="off" placeholder="090… または ○○@icloud.com">
   </section>
 </div>
 <script>
@@ -191,6 +199,17 @@
       list.appendChild(li);
     });
   }
+
+  // 送り先。アプリ側の「知らせる」が読む（localStorage の eigo-dad-to）
+  const dadTo = document.getElementById("dadTo");
+  try { dadTo.value = localStorage.getItem("eigo-dad-to") || ""; } catch (e) {}
+  document.getElementById("dadToSave").addEventListener("click", () => {
+    const note = document.getElementById("dadToNote");
+    try {
+      localStorage.setItem("eigo-dad-to", dadTo.value.trim());
+      note.textContent = dadTo.value.trim() ? "保存しました。" : "消しました。娘が送るときは 共有メニューが開きます。";
+    } catch (e) { note.textContent = "保存できませんでした。"; }
+  });
 
   document.getElementById("reportsCopy").addEventListener("click", () => {
     const text = loadReports().map(reportLine).join("\n") || "（お知らせなし）";
